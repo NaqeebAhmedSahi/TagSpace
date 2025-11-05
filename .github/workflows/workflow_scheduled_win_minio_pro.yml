@@ -6,7 +6,7 @@ on:
 
 jobs:
   e2eTestsElectronWin:
-    name: Test TagSpaces Pro on Windows
+    name: Test BWS Vittoria Pro on Windows
     runs-on: windows-latest
     steps:
       - name: Checking out default branch
@@ -19,7 +19,7 @@ jobs:
         with:
           repository: tagspaces/testdata
           path: tests/testdata
-      - name: Configure NPM for TagSpaces Pro
+      - name: Configure NPM for BWS Vittoria Pro
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'

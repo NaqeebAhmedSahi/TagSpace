@@ -1,8 +1,8 @@
 <section>
-  <h1>TagSpaces – Organize, Tag & Browse Your Files Offline</h1>
+  <h1>BWS Vittoria – Organize, Tag & Browse Your Files Offline</h1>
 
   <p>
-    <strong>TagSpaces</strong> helps you organize, tag, and browse your files, photos,
+    <strong>BWS Vittoria</strong> helps you organize, tag, and browse your files, photos,
     and documents across multiple platforms — completely offline and without cloud dependencies.
   </p>
 
@@ -23,7 +23,7 @@
     <li><strong>Note Taking</strong> — Create and edit notes in plain text, Markdown, or HTML formats.</li>
     <li><strong>To-Do Management</strong> — Use the built-in editor to create simple to-do lists in HTML or Markdown files.</li>
     <li><strong>Cross-Platform</strong> — Available for Windows, macOS, Linux, and Android with a consistent experience.</li>
-    <li><strong>Web Clipper Extension</strong> — Capture web pages, screenshots, and bookmarks as files with the TagSpaces Web Clipper for
+    <li><strong>Web Clipper Extension</strong> — Capture web pages, screenshots, and bookmarks as files with the BWS Vittoria Web Clipper for
       <a href="https://addons.mozilla.org/en-US/firefox/addon/tagspaces/" target="_blank" rel="noopener noreferrer">Firefox</a> and
       <a href="https://chrome.google.com/webstore/detail/tagspaces-web-clipper/ldalmgifdlgpiiadeccbcjojljeanhjk" target="_blank" rel="noopener noreferrer">Chrome</a>.
     </li>
@@ -31,11 +31,11 @@
 
   <h2>Your Data. Your Rules.</h2>
   <p>
-    TagSpaces is designed with privacy in mind — it doesn’t require an account, it doesn’t track your activity,
+    BWS Vittoria is designed with privacy in mind — it doesn’t require an account, it doesn’t track your activity,
     and your files remain under your control. 
   </p>
 
   <p>
-    <strong>Try TagSpaces today</strong> — organize smarter, stay private, and keep your files flexible and future-proof.
+    <strong>Try BWS Vittoria today</strong> — organize smarter, stay private, and keep your files flexible and future-proof.
   </p>
 </section>

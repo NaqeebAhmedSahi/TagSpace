@@ -37,12 +37,12 @@
     <feature name="SocialSharing">
         <param name="android-package" value="nl.xservices.plugins.SocialSharing" />
     </feature>
-    <name>TagSpaces</name>
+    <name>BWS Vittoria</name>
     <description>
 		Offline file organizer and browser with tagging support.
     </description>
     <author email="contact@tagspaces.org" href="https://tagspaces.org">
-        TagSpaces GmbH
+        BWS Vittoria GmbH
     </author>
     <content src="index.html" />
     <access origin="*" />

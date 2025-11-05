@@ -1,6 +1,6 @@
 /**
- * TagSpaces - universal file and folder organizer
- * Copyright (C) 2024-present TagSpaces GmbH
+ * BWS Vittoria - universal file and folder organizer
+ * Copyright (C) 2024-present BWS Vittoria GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License (version 3) as
@@ -236,7 +236,7 @@ function SettingsAI(props: Props) {
             <Typography>{t('core:aiSettings')}</Typography>
             <br />
             <Typography variant="caption">
-              TagSpaces does not have its own AI engine or models, but relies
+              BWS Vittoria does not have its own AI engine or models, but relies
               entirely on external software like Ollama. If you don't have
               Ollama, you can download it for free from
               <TsButton
@@ -358,7 +358,7 @@ function SettingsAI(props: Props) {
           <AccordionSummary>
             <Typography variant="caption">
               All AI-functionality is currently disabled. Please add and
-              configure an AI-engine in order to use external AIs in TagSpaces.
+              configure an AI-engine in order to use external AIs in BWS Vittoria.
             </Typography>
           </AccordionSummary>
         </Accordion>

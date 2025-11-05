@@ -1,13 +1,13 @@
-![TagSpaces Logo](https://www.tagspaces.org/img/tagspaces-logo.svg)
+![BWS Vittoria Logo](https://www.tagspaces.org/img/tagspaces-logo.svg)
 
 [![GitHub All Releases](https://img.shields.io/github/downloads/tagspaces/tagspaces/total.svg)](https://github.com/tagspaces/tagspaces/releases)
-[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20TagSpaces%20Guru-006BFF)](https://gurubase.io/g/tagspaces)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20BWS Vittoria%20Guru-006BFF)](https://gurubase.io/g/tagspaces)
 
-# TagSpaces
+# BWS Vittoria
 
-**TagSpaces** is a free and open-source platform for organizing, tagging, and managing your local files. It runs completely offline, with no need for cloud services, internet connection, or vendor lock-in. Available for **Windows**, **Linux**, and **macOS**, it also includes a [browser extension](https://github.com/tagspaces/browser-extensions) (Web Clipper) for Firefox, Edge, and Chrome to capture online content as local files.
+**BWS Vittoria** is a free and open-source platform for organizing, tagging, and managing your local files. It runs completely offline, with no need for cloud services, internet connection, or vendor lock-in. Available for **Windows**, **Linux**, and **macOS**, it also includes a [browser extension](https://github.com/tagspaces/browser-extensions) (Web Clipper) for Firefox, Edge, and Chrome to capture online content as local files.
 
-![TagSpaces with the Markdown Editor](https://www.tagspaces.org/content/v6/tagspaces-lite-demo.avif)
+![BWS Vittoria with the Markdown Editor](https://www.tagspaces.org/content/v6/tagspaces-lite-demo.avif)
 
 ## 🌐 Learn More
 
@@ -56,7 +56,7 @@ src/
   renderer/         # Core application logic
   main/             # Electron main process
   locales/          # Language translation files
-  node_modules/     # TagSpaces extension modules
+  node_modules/     # BWS Vittoria extension modules
 
 cordova/            # Deprecated Android build
 dll/                # Live reload support for development
@@ -93,7 +93,7 @@ The desktop version of the application uses a web service which is running local
 
     KEY=a_custom_key
 
-> Having a custom key, ensures that another instance of TagSpaces will not communicate with the web service of the initial instance, since it is always running on the same port.
+> Having a custom key, ensures that another instance of BWS Vittoria will not communicate with the web service of the initial instance, since it is always running on the same port.
 
 #### Build & Start
 
@@ -148,7 +148,7 @@ Start the web version locally:
 
 ### 🔌 Extend with Custom Viewers & Editors
 
-TagSpaces supports extension modules for opening and editing different file types. Learn more on our [Extensions Page](https://www.tagspaces.org/extensions/).
+BWS Vittoria supports extension modules for opening and editing different file types. Learn more on our [Extensions Page](https://www.tagspaces.org/extensions/).
 
 ### 🤝 Contributing
 
@@ -156,7 +156,7 @@ We welcome contributions! Please review and sign the [Contributor License Agreem
 
 ## 🌍 Localization
 
-TagSpaces is available in over 20 languages. Help us translate the app by joining our team on [Transifex](https://www.transifex.com/tagspaces/tagspaces/).
+BWS Vittoria is available in over 20 languages. Help us translate the app by joining our team on [Transifex](https://www.transifex.com/tagspaces/tagspaces/).
 
 ## 💡 Ideas & Suggestions
 
@@ -168,7 +168,7 @@ If you encounter a bug or need help, [open an issue](https://github.com/tagspace
 
 ## ⚠️ Known Limitations
 
-TagSpaces is not optimized for locations with more than 100,000 files.
+BWS Vittoria is not optimized for locations with more than 100,000 files.
 
 ## 📡 Feeds
 
@@ -177,4 +177,4 @@ TagSpaces is not optimized for locations with more than 100,000 files.
 
 ## 📄 License
 
-TagSpaces is dual-licensed under the [AGPL](LICENSE.txt) (GNU Affero General Public License) v3 for open-source projects and a commercial license for vendors or resellers. Contact us if you're interested in using TagSpaces under different terms.
+BWS Vittoria is dual-licensed under the [AGPL](LICENSE.txt) (GNU Affero General Public License) v3 for open-source projects and a commercial license for vendors or resellers. Contact us if you're interested in using BWS Vittoria under different terms.

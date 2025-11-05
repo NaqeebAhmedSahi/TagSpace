@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-present - TagSpaces GmbH. All rights reserved. */
+/* Copyright (c) 2016-present - BWS Vittoria GmbH. All rights reserved. */
 import { formatDateTime4Tag } from '@tagspaces/tagspaces-common/misc';
 import { dataTidFormat } from '../../src/renderer/services/test';
 import { expect, test } from './fixtures';
@@ -37,7 +37,7 @@ import {
 import { clearDataStorage, closeWelcomePlaywright } from './welcome.helpers';
 
 const tslContent =
-  '{"appName":"TagSpaces","appVersion":"5.3.6","description":"","lastUpdated":"2023-06-08T16:51:23.926Z","tagGroups":[{"uuid":"collected_tag_group_id","title":"Collected Tags","color":"#61DD61","textcolor":"white","children":[{"title":"Stanimir","color":"#61DD61","textcolor":"white","type":"sidecar"}],"created_date":1686119562860,"modified_date":1686243083871,"expanded":true,"locationId":"dc1ffaaeeb5747e39dd171c7e551afd6"}]}';
+  '{"appName":"BWS Vittoria","appVersion":"5.3.6","description":"","lastUpdated":"2023-06-08T16:51:23.926Z","tagGroups":[{"uuid":"collected_tag_group_id","title":"Collected Tags","color":"#61DD61","textcolor":"white","children":[{"title":"Stanimir","color":"#61DD61","textcolor":"white","type":"sidecar"}],"created_date":1686119562860,"modified_date":1686243083871,"expanded":true,"locationId":"dc1ffaaeeb5747e39dd171c7e551afd6"}]}';
 
 test.afterEach(async () => {
   await clearDataStorage();

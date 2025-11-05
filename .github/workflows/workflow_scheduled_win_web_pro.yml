@@ -6,7 +6,7 @@ on:
 
 jobs:
   e2eTestsWebWin:
-    name: Test TagSpaces Pro Web on Windows
+    name: Test BWS Vittoria Pro Web on Windows
     runs-on: windows-latest
 
     steps:
@@ -20,7 +20,7 @@ jobs:
         with:
           repository: tagspaces/testdata
           path: tests/testdata
-      - name: Configure NPM for TagSpaces Pro
+      - name: Configure NPM for BWS Vittoria Pro
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'

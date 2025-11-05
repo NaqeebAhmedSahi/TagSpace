@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024-present The TagSpaces GmbH. All rights reserved.
+Copyright (c) 2024-present The BWS Vittoria GmbH. All rights reserved.
 */
 
 import React, { createContext, useCallback, useMemo, useState } from 'react';

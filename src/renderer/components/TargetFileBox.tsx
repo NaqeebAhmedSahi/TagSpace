@@ -1,6 +1,6 @@
 /**
- * TagSpaces - universal file and folder organizer
- * Copyright (C) 2017-present TagSpaces GmbH
+ * BWS Vittoria - universal file and folder organizer
+ * Copyright (C) 2017-present BWS Vittoria GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License (version 3) as
@@ -81,13 +81,13 @@ function TargetFileBox(props: Props) {
       console.log('Dropped files: ' + JSON.stringify(files));
       if (dirPath === undefined) {
         showNotification(
-          'Importing files failed, because no folder is opened in TagSpaces!',
+          'Importing files failed, because no folder is opened in BWS Vittoria!',
           'error',
           true,
         );
         return Promise.reject(
           new Error(
-            'Importing files failed, because no folder is opened in TagSpaces!',
+            'Importing files failed, because no folder is opened in BWS Vittoria!',
           ),
         );
       }

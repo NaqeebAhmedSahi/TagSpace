@@ -73,7 +73,7 @@ function Login(): React.ReactElement {
     >
       <Paper style={{ padding: 24, width: 360 }} elevation={3}>
         <Typography variant="h5" component="h1" gutterBottom>
-          TagSpaces — Demo Login
+          BWS Vittoria — Demo Login
         </Typography>
         <form onSubmit={submit}>
           <TextField

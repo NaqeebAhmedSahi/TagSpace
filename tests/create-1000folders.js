@@ -29,7 +29,7 @@ for (let i = 1; i <= 200; i++) {
     fs.copyFileSync(srcFile, path.join(dirPath, 'sample.bmp'));
     fs.copyFileSync(srcFile, path.join(tsDirPath, 'sample.bmp.jpg'));
     const meta =
-      '{"appName":"TagSpaces","appVersion":"5.7.6","description":"","lastUpdated":1708418098702,"tags":[{"title":"medium","color":"#ffad46","textcolor":"#ffffff","type":"sidecar"}],"id":"14b0704b80b64b629c0c2f9a2b19fc7a"}';
+      '{"appName":"BWS Vittoria","appVersion":"5.7.6","description":"","lastUpdated":1708418098702,"tags":[{"title":"medium","color":"#ffad46","textcolor":"#ffffff","type":"sidecar"}],"id":"14b0704b80b64b629c0c2f9a2b19fc7a"}';
     fs.writeFileSync(path.join(tsDirPath, 'sample.bmp.json'), meta);
   } catch (err) {
     console.error(err);

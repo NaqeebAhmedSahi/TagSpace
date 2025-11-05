@@ -1,6 +1,6 @@
 /**
- * TagSpaces - universal file and folder organizer
- * Copyright (C) 2017-present TagSpaces GmbH
+ * BWS Vittoria - universal file and folder organizer
+ * Copyright (C) 2017-present BWS Vittoria GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License (version 3) as
@@ -343,7 +343,7 @@ export namespace TS {
 
   interface FileTemplate {
     id: string;
-    content: string; // e.g: Created with TagSpaces on 20250605'
+    content: string; // e.g: Created with BWS Vittoria on 20250605'
     name?: string;
     description?: string;
     type?: 'md' | 'txt' | 'html';

@@ -10,11 +10,11 @@
   "fileAssociations": [
     {
       "ext": ["md", "mdown", "html", "txt"],
-      "name": "TagSpaces Editor",
+      "name": "BWS Vittoria Editor",
       "role": "Editor"
     }
   ],
-  "copyright": "Copyright © 2025 TagSpaces GmbH",
+  "copyright": "Copyright © 2025 BWS Vittoria GmbH",
   "artifactName": "${name}-${os}-${arch}-${version}.${ext}",
   "win": {
     "target": ["nsis", "zip"],

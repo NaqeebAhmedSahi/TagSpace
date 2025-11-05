@@ -1,6 +1,6 @@
 /**
- * TagSpaces - universal file and folder organizer
- * Copyright (C) 2017-present TagSpaces GmbH
+ * BWS Vittoria - universal file and folder organizer
+ * Copyright (C) 2017-present BWS Vittoria GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License (version 3) as
@@ -77,7 +77,7 @@ function ProTeaser(props: Props) {
             cursor: 'pointer',
           }}
         >
-          <b>TagSpaces Pro</b>
+          <b>BWS Vittoria Pro</b>
           {/* <img style={{ height: 35 }} src={ProTextLogo} alt="" /> */}
           <br />
           <ViewKanbanTwoToneIcon

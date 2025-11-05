@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-present - TagSpaces GmbH. All rights reserved.
+ * Copyright (c) 2016-present - BWS Vittoria GmbH. All rights reserved.
  */
 import { AddRemovePropertiesTags } from './file.properties.helpers';
 import { expect, test } from './fixtures';

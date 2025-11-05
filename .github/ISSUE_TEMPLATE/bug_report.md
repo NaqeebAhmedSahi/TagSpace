@@ -26,7 +26,7 @@ If applicable, add screenshots to help explain your problem.
 **Desktop Application:**
  - Operating System: [e.g. macOS, Windows 10, Linux, Ubuntu]
  - Browser - only needed if you use the browser extensions for Firefox or Chrome
- - TagSpaces Version [e.g. 3.1.1]
+ - BWS Vittoria Version [e.g. 3.1.1]
 
 **Additional context**
 Add any other context about the problem here.

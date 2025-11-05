@@ -5,12 +5,12 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('sw.js')
       .then(reg => {
-        document.title = 'TagSpaces - ' + document.location.hostname;
-        // console.log('TagSpaces service worker registered.', reg);
+        document.title = 'BWS Vittoria - ' + document.location.hostname;
+        // console.log('BWS Vittoria service worker registered.', reg);
         return true;
       })
       .catch(err =>
-        console.warn('Error registering TagSpaces service worker ' + err)
+        console.warn('Error registering BWS Vittoria service worker ' + err)
       );
   });
 }

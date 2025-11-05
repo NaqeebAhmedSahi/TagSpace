@@ -1,11 +1,11 @@
 {
   "name": "tagspaces",
-  "productName": "TagSpaces",
+  "productName": "BWS Vittoria",
   "version": "6.7.0",
   "description": "Offline file organizer and browser with tagging support.",
   "homepage": "https://www.tagspaces.org",
   "author": {
-    "name": "TagSpaces GmbH",
+    "name": "BWS Vittoria GmbH",
     "email": "info@tagspaces.org",
     "url": "https://www.tagspaces.org"
   },

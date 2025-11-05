@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-present - TagSpaces GmbH. All rights reserved. */
+/* Copyright (c) 2016-present - BWS Vittoria GmbH. All rights reserved. */
 import { expect } from '@playwright/test';
 import pathLib from 'path';
 import AppConfig from '../../src/renderer/AppConfig';

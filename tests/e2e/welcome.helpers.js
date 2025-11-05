@@ -33,7 +33,7 @@ export async function closeWelcomePlaywright() {
       await global.client.click('[data-tid=nextStepOnboarding]');
       await global.client.click('[data-tid=nextStepOnboarding]');
       await global.client.click('[data-tid=nextStepOnboarding]');
-      await global.client.click('[data-tid=startTagSpacesAfterOnboarding]');
+      await global.client.click('[data-tid=startBWS VittoriaAfterOnboarding]');
       */
       await global.client.click('[data-tid=agreeLicenseDialog]');
     }

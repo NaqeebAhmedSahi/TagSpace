@@ -2,7 +2,7 @@
 
 platform :ios, '11.0'
 
-target 'TagSpaces' do
-	project 'TagSpaces.xcodeproj'
+target 'BWS Vittoria' do
+	project 'BWS Vittoria.xcodeproj'
 
 end

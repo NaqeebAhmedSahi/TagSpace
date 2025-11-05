@@ -1,7 +1,7 @@
 /* eslint-disable compat/compat */
 /**
- * TagSpaces - universal file and folder organizer
- * Copyright (C) 2017-present TagSpaces GmbH
+ * BWS Vittoria - universal file and folder organizer
+ * Copyright (C) 2017-present BWS Vittoria GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License (version 3) as
@@ -81,7 +81,7 @@ export function defaultTitle(searchQuery: TS.SearchQuery) {
     "lmdt": 1479679132839,
     "name": "Apple-Notes-Mac2 (copy).jpg",
     "path":
-      "/home/na/TagSpaces/testfiles/sidecarTests/Apple-Notes-Mac2 (copy).jpg",
+      "/home/na/BWS Vittoria/testfiles/sidecarTests/Apple-Notes-Mac2 (copy).jpg",
     "size": 84162,
     "tags": [
       {
@@ -97,7 +97,7 @@ export function defaultTitle(searchQuery: TS.SearchQuery) {
     "fromTime": "",
     "toTime": "",
     "thumbPath":
-      "/home/na/TagSpaces/testfiles/sidecarTests/.ts/Apple-Notes-Mac2 (copy).jpg.jpg",
+      "/home/na/BWS Vittoria/testfiles/sidecarTests/.ts/Apple-Notes-Mac2 (copy).jpg.jpg",
     "uuid": "76075fc2-4a2f-4e27-a188-d96fece032aa"
   },
 */

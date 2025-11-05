@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-present - TagSpaces GmbH. All rights reserved. */
+/* Copyright (c) 2016-present - BWS Vittoria GmbH. All rights reserved. */
 import { expect } from '@playwright/test';
 import { clickOn, expectElementExist, setInputKeys } from './general.helpers';
 

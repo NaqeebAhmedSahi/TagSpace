@@ -1,6 +1,6 @@
 #!/bin/bash
 #===============================================
-# generate TagSpaces compatible thumbnails from images files
+# generate BWS Vittoria compatible thumbnails from images files
 # with the help imagemagic
 # supporting: jpg,png,gif,bmp,svg,webp,tiff
 #===============================================
@@ -8,8 +8,8 @@
 # chmod +x thumbgen.sh
 # ./thumbgen.sh /home/username/photos
 #===============================================
-#  TagSpaces - universal file and folder organizer
-#  Copyright (C) 2017-present TagSpaces GmbH
+#  BWS Vittoria - universal file and folder organizer
+#  Copyright (C) 2017-present BWS Vittoria GmbH
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License (version 3) as

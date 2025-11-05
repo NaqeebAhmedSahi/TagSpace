@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-present - TagSpaces GmbH. All rights reserved. */
+/* Copyright (c) 2016-present - BWS Vittoria GmbH. All rights reserved. */
 import { expect } from './fixtures';
 import { clickOn, expectElementExist, typeInputValue } from './general.helpers';
 import { dataTidFormat } from '../../src/renderer/services/test';

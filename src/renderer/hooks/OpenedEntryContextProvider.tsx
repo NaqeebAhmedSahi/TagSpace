@@ -1,6 +1,6 @@
 /**
- * TagSpaces - universal file and folder organizer
- * Copyright (C) 2023-present TagSpaces GmbH
+ * BWS Vittoria - universal file and folder organizer
+ * Copyright (C) 2023-present BWS Vittoria GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License (version 3) as
@@ -619,7 +619,7 @@ export const OpenedEntryContextProvider = ({
       setEditMode(true);
     }
 
-    const locationName = loc ? loc.name : 'TagSpaces'; // TODO get it later from app config
+    const locationName = loc ? loc.name : 'BWS Vittoria'; // TODO get it later from app config
 
     const entryNameForTitle =
       fsEntry.name.length > 40

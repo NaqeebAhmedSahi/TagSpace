@@ -218,7 +218,7 @@ function HowToStart() {
       },
     },
     {
-      label: t('startUsingTagSpaces'),
+      label: t('startUsingBWS Vittoria'),
       description: t('htsStartUsingTS'),
       action: () => {
         selectByTID('createNewDropdownButtonTID')?.classList.add(

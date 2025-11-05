@@ -1,6 +1,6 @@
 # Changelog
 
-> Starting from version 4 of the TagSpaces the changelog was moved to the [what's new page](https://www.tagspaces.org/whatsnew/) of the official project website.
+> Starting from version 4 of the BWS Vittoria the changelog was moved to the [what's new page](https://www.tagspaces.org/whatsnew/) of the official project website.
 
 ## Version 3.11.6 / 2021.08.31
 
@@ -70,7 +70,7 @@
 - **[PRO]** added support for sharable links with validation duration in object storage locations
 - **[PRO]** add input fields for entering lat and long directly in the geo tagging dialog
 - **[PRO]** export current folder content or search results entries as CSV file
-- **[PRO]** added support for multi factor auth (MFA) for TagSpaces Enterprise
+- **[PRO]** added support for multi factor auth (MFA) for BWS Vittoria Enterprise
 - **[PRO]** added new smart icon as pin for files and folder, redesigning pin popup
 - **[PRO]** implement coloring map icons according to the color of the first tag
 - **[PRO]** extend the tag menu with add to tag group
@@ -303,7 +303,7 @@
 
 ### Community
 
-- 🎉 Added global key shortcut `ctrl/cmd + shift + f` for showing TagSpaces in search mode
+- 🎉 Added global key shortcut `ctrl/cmd + shift + f` for showing BWS Vittoria in search mode
 - 🌟 removing extrafile with portable script because causing issue with MacOS signing
 - 🌟 fine tunning ui of the entry properties area
 - 🌟 optimizing compact mode in grid perspective
@@ -313,7 +313,7 @@
 - 🌟 optimizing displaying search results by removing the text content
 - 🌟 improving ui of the search panel
 - 🌟 enabling creating the index for every location
-- 🌟 improving TagSpaces performance by removing search index from Redux store
+- 🌟 improving BWS Vittoria performance by removing search index from Redux store
 - 🐛 fix issues with file renaming and thumbnail showing in the entry properties
 - 🐛 fix geo pointer shadow icon
 
@@ -475,7 +475,7 @@
 - 🎉 added the ability to add tags to all selected files by ctrl+clicking a tag in the tag library
 - 🎉 added the feature to tag all selected files when drag and dropping a tag onto a file
 - 🎉 making the app usable on small screens, hiding the middle panel if the height of the window is greater than the width
-- 🎉 first public release of TagSpaces v3 for Android with a minimum Android version of 6.0 (SDK 23)
+- 🎉 first public release of BWS Vittoria v3 for Android with a minimum Android version of 6.0 (SDK 23)
 - 🌟 making the toolbars usable on small screens
 - 🌟 improving performance by converting react component to stateless functional components
 - 🌟 enabling drag and drop of tags from one entry to another
@@ -515,7 +515,7 @@
 - limit the parent directory navigation to current location
 - fix various usability issue in folder container toolbar
 - updated split pane resizer style to prevent the divider from overlapping with the scroll bar [#855](https://github.com/tagspaces/tagspaces/issues/855)
-- added random sort order for directory content, useful when using TagSpaces as media player
+- added random sort order for directory content, useful when using BWS Vittoria as media player
 - getting previous and next entries iterate now only over files
 - previous and next file button select file in the perspective
 - added the ability to select multiple files by holding the shift key. [#852](https://github.com/tagspaces/tagspaces/issues/852)
@@ -750,7 +750,7 @@
 
 ### Pro
 
-- Initial release of [TagSpaces Pro](https://www.tagspaces.org/products/pro)
+- Initial release of [BWS Vittoria Pro](https://www.tagspaces.org/products/pro)
 
 ### Community
 

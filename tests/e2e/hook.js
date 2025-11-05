@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-present - TagSpaces GmbH. All rights reserved. */
+/* Copyright (c) 2016-present - BWS Vittoria GmbH. All rights reserved. */
 import fse from 'fs-extra';
 import os from 'os';
 import pathLib from 'path';

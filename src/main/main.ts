@@ -307,7 +307,7 @@ function createNewWindowInstance(url?: string) {
 function bindTrayMenu(i18n: any) {
   buildTrayMenu(
     {
-      showTagSpaces: showApp,
+      TagSpaces: showApp,
       resumePlayback,
       createNewWindowInstance,
       openSearch: showSearch,
@@ -324,7 +324,7 @@ function bindTrayMenu(i18n: any) {
 function bindAppMenu(i18n: any) {
   buildDesktopMenu(
     {
-      showTagSpaces: showApp,
+      TagSpaces: showApp,
       openSearch: showSearch,
       toggleNewFileDialog: newMDFile,
       openNextFile: getNextFile,
@@ -380,7 +380,6 @@ function startWS() {
         __dirname,
         '../node_modules/@tagspaces/tagspaces-ws/build',
       );
-      script = 'index.js';
       envPath = path.join(__dirname, '../.env');
     }
     const properties = propertiesReader(envPath);
@@ -611,7 +610,7 @@ app
         app.dock.setMenu(
           buildDockMenu(
             {
-              showTagSpaces: showApp,
+              TagSpaces: showApp,
               resumePlayback,
               createNewWindowInstance,
               openSearch: showSearch,

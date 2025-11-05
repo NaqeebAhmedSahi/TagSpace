@@ -1,7 +1,7 @@
 {
   "name": "tagspaces",
   "version": "0.0.0",
-  "description": "TagSpaces Core Repository",
+  "description": "BWS Vittoria Core Repository",
   "keywords": [
     "electron",
     "react",
@@ -18,7 +18,7 @@
   },
   "license": "AGPL-3.0",
   "author": {
-    "name": "TagSpaces GmbH",
+    "name": "BWS Vittoria GmbH",
     "email": "info@tagspaces.org",
     "url": "https://www.tagspaces.org"
   },
@@ -46,7 +46,7 @@
     "clean-maps": "npx rimraf --glob release/app/dist/**/*.map && npx rimraf --glob web/dist/*.map && npx rimraf --glob cordova/www/dist/*.map",
     "cordova-add-android": "cd cordova && cordova platform add android@9.1.0 && cd ..",
     "cordova-add-ios": "cd cordova && cordova platform add ios && cd ..",
-    "cordova-create-app": "cordova create ./cordova org.tagspaces.iosn TagSpaces",
+    "cordova-create-app": "cordova create ./cordova org.tagspaces.iosn BWS Vittoria",
     "cordova-list-emulators": "cd cordova && cordova run --list --emulator && cd ..",
     "cordova-remove-android": "cd cordova && cordova platform remove android && cd ..",
     "cordova-remove-ios": "cd cordova && cordova platform remove ios && cd ..",

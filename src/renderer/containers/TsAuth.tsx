@@ -1,6 +1,6 @@
 /**
- * TagSpaces - universal file and folder organizer
- * Copyright (C) 2017-present TagSpaces GmbH
+ * BWS Vittoria - universal file and folder organizer
+ * Copyright (C) 2017-present BWS Vittoria GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License (version 3) as
@@ -59,7 +59,7 @@ const TsAuth: React.FC<any> = (props) => {
           }}
         >
           <AmplifyTotpSetup
-            headerText="TagSpaces Time-Based One-Time Password Login"
+            headerText="BWS Vittoria Time-Based One-Time Password Login"
             slot="totp-setup"
             issuer={t('core:appName') + ' ' + window.location.hostname}
             // user={props.user}
@@ -89,7 +89,7 @@ const TsAuth: React.FC<any> = (props) => {
             hideSignUp={true}
           >
             <div slot="header-subtitle" style={{ textAlign: 'center' }}>
-              <h2>Welcome to TagSpaces</h2>
+              <h2>Welcome to BWS Vittoria</h2>
               <img alt="logo" src={LogoIcon} />
             </div>
           </AmplifySignIn>
