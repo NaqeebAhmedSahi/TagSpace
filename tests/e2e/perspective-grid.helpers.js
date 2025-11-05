@@ -1,0 +1,90 @@
+import {
+  clickOn,
+  expectElementExist,
+  setInputValue,
+  typeInputValue,
+} from './general.helpers';
+import {
+  cleanFileName,
+  extractFileExtension,
+  extractTagsAsObjects,
+} from '@tagspaces/tagspaces-common/paths';
+import {
+  dirSeparator,
+  tagDelimiter,
+} from '@tagspaces/tagspaces-common/AppConfig';
+import { sortByCriteria } from '@tagspaces/tagspaces-common/misc';
+
+/**
+ *
+ * @param tagNames
+ * @param addTag = true - add tags; false - remove tags
+ * @param perspective - current Perspective
+ * @returns {Promise<void>}
+ * @constructor
+ */
+export async function AddRemoveTagsToSelectedFiles(
+  perspective = 'grid',
+  tagNames = ['test-tag'], // TODO fix camelCase tag name
+  addTag = true,
+) {
+  await clickOn('[data-tid=' + perspective + 'PerspectiveAddRemoveTags]');
+  await expectElementExist('[data-tid=AddRemoveTagsSelectTID]', true, 5000);
+  for (let i = 0; i < tagNames.length; i++) {
+    const tagName = tagNames[i];
+    const input = global.client.locator(
+      '[data-tid=AddRemoveTagsSelectTID] input',
+    );
+
+    // try to fill, fallback to typing
+    try {
+      await input.fill(tagName);
+    } catch {
+      await input.click(); // ensure focus
+      await global.client.keyboard.type(tagName);
+    }
+
+    // hit Enter to commit this tag
+    await input.press('Enter');
+  }
+
+  if (addTag) {
+    await clickOn('[data-tid=addTagsMultipleEntries]');
+  } else {
+    await clickOn('[data-tid=removeTagsMultipleEntries]');
+  }
+  // await waitForNotification();
+  // await isDisplayed('[data-tid=notificationTID]', false, 4500);
+
+  /*const filesList = await global.client.$$(perspectiveGridTable + firstFile); // Selected file can be only one this check all files
+  for (let i = 0; i < filesList.length; i++) {
+    await expectTagsExist(filesList[i], tagNames, addTag);
+  }*/
+}
+
+export async function getDirEntries(testDir, sortCriteria, sortAsc) {
+  // const path = require('path');
+  const fs = require('fs-extra');
+  /*const testDir = path.join(
+    __dirname,
+    '..',
+    'testdata-tmp',
+    'file-structure',
+    'supported-filestypes',
+  );*/
+  const dirEntries = (await fs.readdir(testDir, { withFileTypes: true }))
+    .filter((item) => !item.isDirectory() && !item.name.startsWith('.'))
+    .map((item) => {
+      const entryPath = testDir + dirSeparator + item.name;
+      const stats = fs.statSync(entryPath);
+      return {
+        name: cleanFileName(item.name),
+        isFile: item.isFile(),
+        size: stats.size,
+        lmdt: stats.mtime.getTime ? stats.mtime.getTime() : stats.mtime,
+        extension: extractFileExtension(item.name, dirSeparator),
+        tags: extractTagsAsObjects(item.name, tagDelimiter, dirSeparator),
+      };
+    });
+  return sortByCriteria(dirEntries, sortCriteria, sortAsc);
+}

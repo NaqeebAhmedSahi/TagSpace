@@ -1,0 +1,10 @@
+[main]
+host = https://www.transifex.com
+
+[o:tagspaces:p:tagspaces:r:corejson]
+file_filter = src/renderer/locales/<lang>/core.json
+source_file = src/renderer/locales/en/core.json
+source_lang = en
+type        = KEYVALUEJSON
+
+

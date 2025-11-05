@@ -1,0 +1,30 @@
+{
+  "name": "tagspaces",
+  "productName": "TagSpaces",
+  "version": "6.7.0",
+  "description": "Offline file organizer and browser with tagging support.",
+  "homepage": "https://www.tagspaces.org",
+  "author": {
+    "name": "TagSpaces GmbH",
+    "email": "info@tagspaces.org",
+    "url": "https://www.tagspaces.org"
+  },
+  "main": "./dist/main/main.js",
+  "license": "AGPL-3.0",
+  "scripts": {
+    "rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
+    "postinstall": "npm run rebuild && npm run link-modules",
+    "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
+  },
+  "dependencies": {
+    "@elife/pm2": "3.6.1",
+    "@tagspaces/extensions": "1.0.202",
+    "@tagspaces/tagspaces-common-node": "4.5.102",
+    "@tagspaces/tagspaces-ws": "4.5.102",
+    "sharp": "0.32.6",
+    "ws": "8.18.1"
+  },
+  "optionalDependencies": {
+    "@tagspacespro/extensions": "2.0.10"
+  }
+}

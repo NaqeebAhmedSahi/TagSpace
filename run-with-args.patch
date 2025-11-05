@@ -1,0 +1,30 @@
+Index: src/main/main.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/main.ts b/src/main/main.ts
+--- a/src/main/main.ts	(revision ae4ef7d57b496aed78413260f455195aded3f37b)
++++ b/src/main/main.ts	(date 1727359541758)
+@@ -61,6 +61,8 @@
+ const isDebug =
+   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
+
++process.argv = [...process.argv, '/Users/sytolk/Public/sample.md.jpg'];
++
+ if (isDebug) {
+   require('electron-debug')({ showDevTools: false });
+   if (isMacLike) {
+@@ -86,10 +88,10 @@
+   } else if (arg.toLowerCase() === '-p' || arg.toLowerCase() === '--portable') {
+     app.setPath('userData', process.cwd() + '/tsprofile'); // making the app portable
+     portableMode = true;
+-  } else if (testMode || isDebug) {
++  } /* else if (testMode || isDebug) {
+     // ignoring the spectron testing
+     arg = '';
+-  } else if (
++  }*/ else if (
+     arg.endsWith('main.prod.js') ||
+     arg === './app/main.dev.babel.js' ||
+     arg === '.' ||
