@@ -231,6 +231,7 @@
     "semver": "^7.3.5",
     "slick-carousel": "^1.8.1",
     "source-map-support": "0.5.21",
+    "sqlite3": "^5.1.7",
     "tga-js": "1.1.1",
     "ts-react-splitter": "3.0.0",
     "utif": "github:photopea/UTIF.js",

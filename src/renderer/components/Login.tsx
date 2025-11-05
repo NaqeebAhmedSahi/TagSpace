@@ -9,11 +9,6 @@ import {
 } from '@mui/material';
 import { useUserContext } from '-/hooks/useUserContext';
 
-const TEMP_USER = {
-  username: 'admin',
-  password: 'secret',
-};
-
 const createFakeCognitoUser = (username: string) => ({
   attributes: { email: username },
   associateSoftwareToken: () => {},
@@ -32,20 +27,37 @@ function Login(): React.ReactElement {
   const submit = (e?: React.FormEvent) => {
     e?.preventDefault();
     setError(null);
-    if (username === TEMP_USER.username && password === TEMP_USER.password) {
-      // set global demo user for other consumers
-      // @ts-ignore
-      window.ExtDemoUser = { email: username };
-      // call context login with a minimal CognitoUser-like object
-      if (loggedIn) {
-        // @ts-ignore
-        loggedIn(createFakeCognitoUser(username));
-      }
-    } else {
-      setError('Invalid credentials. Try admin / secret');
-      setOpenSnack(true);
-    }
+    // call main process to check credentials via sqlite
+    // @ts-ignore - exposed in preload
+    window.electronIO.ipcRenderer
+      .invoke('auth-login', username, password)
+      .then((res: any) => {
+        if (res && res.success) {
+          // set global demo user for other consumers
+          // @ts-ignore
+          window.ExtDemoUser = { email: username };
+          if (loggedIn) {
+            // @ts-ignore
+            loggedIn(createFakeCognitoUser(username));
+          }
+        } else {
+          setError(res?.message || 'Invalid credentials');
+          setOpenSnack(true);
+        }
+        return null;
+      })
+      .catch((err: any) => {
+        setError(`Login failed: ${err?.message || String(err)}`);
+        setOpenSnack(true);
+        return null;
+      });
   };
+
+  React.useEffect(() => {
+    // Initialize DB and demo user on mount
+    // @ts-ignore
+    window.electronIO.ipcRenderer.invoke('auth-init').catch(() => {});
+  }, []);
 
   const handleCloseSnack = () => setOpenSnack(false);
 

@@ -73,6 +73,11 @@ const configuration: webpack.Configuration = {
     __dirname: false,
     __filename: false,
   },
+  // Treat native sqlite modules as externals so native bindings are resolved at runtime
+  externals: {
+    sqlite3: 'commonjs sqlite3',
+    'better-sqlite3': 'commonjs better-sqlite3',
+  },
 };
 
 export default merge(baseConfig, configuration);

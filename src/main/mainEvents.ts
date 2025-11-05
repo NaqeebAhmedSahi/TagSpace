@@ -45,6 +45,7 @@ import {
 } from './util';
 import os from 'os';
 
+
 //let watcher: FSWatcher;
 const progress = {};
 let wsc;
@@ -195,6 +196,160 @@ export default function loadMainEvents() {
       throw new Error('Invalid filename');
     }
     return await readMacOSTags(filename);
+  });
+
+  // Simple SQLite-backed auth for demo purposes
+  const initAuthDb = async () => {
+    try {
+      const userData = app.getPath('userData');
+      await fs.ensureDir(userData);
+      const dbPath = path.join(userData, 'auth.db');
+      // require sqlite3 at runtime so the project doesn't hard-fail to compile before dependency is installed
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sqlite3mod = require('sqlite3');
+      // robustly detect sqlite3 verbose()/Database export shape (bundlers can change shape)
+      let sql: any = sqlite3mod;
+      try {
+        if (sqlite3mod && typeof sqlite3mod.verbose === 'function') {
+          sql = sqlite3mod.verbose();
+        } else if (sqlite3mod && sqlite3mod.default && typeof sqlite3mod.default.verbose === 'function') {
+          sql = sqlite3mod.default.verbose();
+        }
+      } catch (e) {
+        // ignore and fall back to other shapes below
+      }
+      const DatabaseCtor: any = (sql && sql.Database) || (sqlite3mod && sqlite3mod.Database) || (sqlite3mod && sqlite3mod.default && sqlite3mod.default.Database) || null;
+      if (!DatabaseCtor) {
+        // Dump module shape to help diagnose bundler/native binding issues
+        try {
+          const modSummary = {
+            type: typeof sqlite3mod,
+            keys: sqlite3mod ? Object.keys(sqlite3mod) : undefined,
+            defaultType: sqlite3mod && sqlite3mod.default ? typeof sqlite3mod.default : undefined,
+            defaultKeys: sqlite3mod && sqlite3mod.default ? Object.keys(sqlite3mod.default) : undefined,
+            resolved: (() => {
+              try {
+                return require.resolve('sqlite3');
+              } catch (e) {
+                return String(e && e.message ? e.message : e);
+              }
+            })(),
+          };
+          console.error('sqlite3 module summary', JSON.stringify(modSummary));
+        } catch (e) {
+          console.error('error introspecting sqlite3 module', e);
+        }
+        throw new Error('sqlite3 Database constructor not found — see logs for module shape and rebuild instructions');
+      }
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          db.run(
+            `CREATE TABLE IF NOT EXISTS users (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              username TEXT UNIQUE,
+              password TEXT
+            )`,
+            (createErr) => {
+              if (createErr) {
+                db.close();
+                return reject(createErr);
+              }
+              // Insert a demo user if not existing
+              db.run(
+                `INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)`,
+                ['admin', 'secret'],
+                (insErr) => {
+                  db.close();
+                  if (insErr) return reject(insErr);
+                  return resolve(true);
+                },
+              );
+            },
+          );
+        });
+      });
+    } catch (e) {
+      console.error('initAuthDb error:', e);
+      throw e;
+    }
+  };
+
+  ipcMain.handle('auth-init', async () => {
+    try {
+      await initAuthDb();
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
+  });
+
+  ipcMain.handle('auth-login', async (event, username: string, password: string) => {
+    try {
+      const userData = app.getPath('userData');
+      const dbPath = path.join(userData, 'auth.db');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sqlite3mod = require('sqlite3');
+      // detect Database constructor as above
+      let sql: any = sqlite3mod;
+      try {
+        if (sqlite3mod && typeof sqlite3mod.verbose === 'function') {
+          sql = sqlite3mod.verbose();
+        } else if (sqlite3mod && sqlite3mod.default && typeof sqlite3mod.default.verbose === 'function') {
+          sql = sqlite3mod.default.verbose();
+        }
+      } catch (e) {
+        // ignore
+      }
+      const DatabaseCtor: any = (sql && sql.Database) || (sqlite3mod && sqlite3mod.Database) || (sqlite3mod && sqlite3mod.default && sqlite3mod.default.Database) || null;
+      if (!DatabaseCtor) {
+        try {
+          const modSummary = {
+            type: typeof sqlite3mod,
+            keys: sqlite3mod ? Object.keys(sqlite3mod) : undefined,
+            defaultType: sqlite3mod && sqlite3mod.default ? typeof sqlite3mod.default : undefined,
+            defaultKeys: sqlite3mod && sqlite3mod.default ? Object.keys(sqlite3mod.default) : undefined,
+            resolved: (() => {
+              try {
+                return require.resolve('sqlite3');
+              } catch (e) {
+                return String(e && e.message ? e.message : e);
+              }
+            })(),
+          };
+          console.error('sqlite3 module summary', JSON.stringify(modSummary));
+        } catch (e) {
+          console.error('error introspecting sqlite3 module', e);
+        }
+        return { success: false, message: 'sqlite3 not available — see main logs for details' } as any;
+      }
+      return await new Promise((resolve) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) {
+            console.error('auth-login open db error', err);
+            return resolve({ success: false, message: 'DB open error' });
+          }
+          db.get(
+            `SELECT username FROM users WHERE username = ? AND password = ?`,
+            [username, password],
+            (getErr, row) => {
+              db.close();
+              if (getErr) {
+                console.error('auth-login get error', getErr);
+                return resolve({ success: false, message: 'DB query error' });
+              }
+              if (row && row.username) {
+                return resolve({ success: true, user: { username: row.username } });
+              }
+              return resolve({ success: false, message: 'Invalid credentials' });
+            },
+          );
+        });
+      });
+    } catch (e) {
+      console.error('auth-login error', e);
+      return { success: false, message: e.message };
+    }
   });
   ipcMain.on('ondragstart', (event, filePath) => {
     // https://www.electronjs.org/docs/latest/api/web-contents#contentsstartdragitem
