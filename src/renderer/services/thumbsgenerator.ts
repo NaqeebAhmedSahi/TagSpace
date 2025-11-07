@@ -173,25 +173,136 @@ export function generateThumbnailPromise(
   return generateDefaultThumbnail();
 }
 
+interface PageRange {
+  startPage?: number;
+  endPage?: number;
+}
+
 export async function extractPDFcontent(
   arrayBuffer: ArrayBuffer,
-): Promise<string> {
+  pageRange?: PageRange,
+  progressCallback?: (progress: number) => void
+): Promise<{text: string; links: Array<{url: string; text: string}>; numPages: number}> {
   let extractedText = '';
+  const extractedLinks: Array<{url: string; text: string}> = [];
+  let numPages = 0;
+
   if (arrayBuffer) {
     try {
       const pdfDocument = await pdfjs.getDocument(arrayBuffer).promise;
-      for (let i = 1; i <= pdfDocument.numPages; i++) {
-        const page = await pdfDocument.getPage(i);
-        const textContent = await page.getTextContent();
-        extractedText +=
-          textContent.items.map((item) => item.str).join(' ') + '\n';
+      numPages = pdfDocument.numPages;
+      
+      // Default to processing first 50 pages if no range specified
+      const start = pageRange?.startPage || 1;
+      const end = Math.min(
+        pageRange?.endPage || Math.min(numPages, 50),
+        numPages
+      );
+
+      const chunks: string[] = [];
+      for (let i = start; i <= end; i++) {
+        try {
+          const page = await pdfDocument.getPage(i);
+          
+          // Extract text content
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item) => item.str).join(' ') + '\n';
+          chunks.push(pageText);
+
+          // Extract links/annotations
+          try {
+            const annotations = await page.getAnnotations();
+            
+            for (const ann of annotations) {
+              let linkUrl: string | null = null;
+              
+              // Check for direct URL in Link annotation
+              if (ann.subtype === 'Link' && ann.url) {
+                linkUrl = ann.url;
+              }
+              // Check for URI action
+              else if (ann.subtype === 'Link' && ann.action === 'URI' && ann.actionType === 'URI') {
+                linkUrl = ann.uri || ann.A?.URI || null;
+              }
+              // Check for action object
+              else if (ann.subtype === 'Link' && ann.action && typeof ann.action === 'object') {
+                if (ann.action.uri) {
+                  linkUrl = ann.action.uri;
+                } else if (ann.action.URI) {
+                  linkUrl = ann.action.URI;
+                } else if (ann.action.S && ann.action.S === 'URI' && ann.action.URI) {
+                  linkUrl = ann.action.URI;
+                }
+              }
+              
+              if (linkUrl) {
+                // Try to find the link text from the text content
+                let linkText = linkUrl;
+                
+                // Check if we can find the link text in the text content
+                // This is approximate - PDF.js doesn't always map link annotations to text perfectly
+                if (ann.rect && textContent.items) {
+                  // Try to find text items that might be near the link annotation
+                  const linkRect = ann.rect;
+                  const nearbyText = textContent.items
+                    .filter((item: any) => {
+                      if (!item.transform) return false;
+                      const [tx, ty] = item.transform.slice(-2);
+                      return (
+                        tx >= linkRect[0] - 10 &&
+                        tx <= linkRect[2] + 10 &&
+                        ty >= linkRect[1] - 10 &&
+                        ty <= linkRect[3] + 10
+                      );
+                    })
+                    .map((item: any) => item.str)
+                    .join(' ');
+                  
+                  if (nearbyText.trim()) {
+                    linkText = nearbyText.trim();
+                  }
+                }
+                
+                // Only add if not already in the list (avoid duplicates)
+                if (!extractedLinks.some(link => link.url === linkUrl)) {
+                  extractedLinks.push({
+                    url: linkUrl,
+                    text: linkText
+                  });
+                }
+              }
+            }
+          } catch (linkError) {
+            console.warn(`Error extracting links from page ${i}:`, linkError);
+            // Continue even if link extraction fails
+          }
+
+          if (progressCallback) {
+            progressCallback((i - start) / (end - start + 1));
+          }
+        } catch (pageError) {
+          console.error(`Error extracting text from page ${i}:`, pageError);
+          chunks.push(`[Error extracting page ${i}]\n`);
+        }
+
+        // Join chunks every 10 pages to prevent memory issues
+        if (i % 10 === 0) {
+          extractedText += chunks.join('');
+          chunks.length = 0;
+        }
       }
-      extractedText += '\r\n';
+      
+      // Join remaining chunks
+      if (chunks.length > 0) {
+        extractedText += chunks.join('');
+      }
     } catch (error) {
       console.error('Error extracting text from PDF:', error);
+      throw error;
     }
   }
-  return extractedText;
+
+  return { text: extractedText, links: extractedLinks, numPages };
 }
 
 export function generatePDFThumbnail(

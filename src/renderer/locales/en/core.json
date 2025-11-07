@@ -1094,6 +1094,7 @@
   "workspaces": "Workspaces",
   "workspace": "Workspace",
   "currentWorkspace": "Current Workspace",
+  "openAIKeyMissing": "OpenAI API key not configured - please configure in settings",
   "all": "All",
   "createWorkspace": "Create Workspace",
   "removeWorkspace": "Remove Workspace",

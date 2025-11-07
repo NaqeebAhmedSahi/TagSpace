@@ -74,6 +74,10 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
+  Tab,
+  Tabs,
+  CircularProgress,
 } from '@mui/material';
 import FormHelperText from '@mui/material/FormHelperText';
 import Grid from '@mui/material/Grid';
@@ -110,6 +114,20 @@ import {
 import { useSelector } from 'react-redux';
 import { Pro } from '../pro';
 import { extractPDFcontent } from '-/services/thumbsgenerator';
+import { extractDocContent } from '-/services/docParser';
+import {
+  isOpenAIInitialized,
+  ensureInitFromDefault,
+  initOpenAI,
+  convertToJSON as convertToJSONService,
+} from '-/services/openai';
+import PDFParserDialog from './dialogs/PDFParserDialog';
+import {
+  initPdfDataDb,
+  savePdfData,
+  loadPdfData,
+  checkPdfDataExists,
+} from '-/services/pdfDataStorage';
 
 const ThumbnailTextField = styled(TsTextField)(({ theme }) => ({
   [`& .${inputBaseClasses.root}`]: {
@@ -280,26 +298,313 @@ function EntryProperties({ tileServer }: Props) {
 
   const [parserOpen, setParserOpen] = useState(false);
   const [parserText, setParserText] = useState<string>('');
+  const [parserJSON, setParserJSON] = useState<string>('');
+  const [parserLinks, setParserLinks] = useState<Array<{url: string; text: string}>>([]);
   const [parserLoading, setParserLoading] = useState(false);
+  const [loadingFromDb, setLoadingFromDb] = useState(false);
+  const [pageRange, setPageRange] = useState<{start?: number; end?: number}>({});
+  const [totalPages, setTotalPages] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
+  const [isDataSaved, setIsDataSaved] = useState(false);
 
-  const handleParsePdf = async () => {
-    if (!location || !openedEntry || !openedEntry.path) return;
-    setParserLoading(true);
-    try {
-      const buffer = await location.getFileContentPromise(
-        openedEntry.path,
-        'arraybuffer',
-      );
-      const text = await extractPDFcontent(buffer as ArrayBuffer);
-      setParserText(text || '');
-      setParserOpen(true);
-    } catch (err) {
-      console.error('Error parsing PDF: ', err);
-      showNotification(t('core:pdfParseFailed') || 'PDF parse failed');
-    } finally {
-      setParserLoading(false);
+  const [parseProgress, setParseProgress] = useState(0);
+
+  // Initialize PDF data database on mount
+  useEffect(() => {
+    initPdfDataDb().catch((error) => {
+      console.error('Failed to initialize PDF data database:', error);
+    });
+  }, []);
+
+  // Check if data exists in DB whenever file changes
+  useEffect(() => {
+    if (openedEntry?.path) {
+      const ext = extractFileExtension(
+        openedEntry.name || openedEntry.path,
+      )?.toLowerCase();
+      if (ext === 'pdf') {
+        checkPdfDataExists(openedEntry.path)
+          .then((exists) => {
+            setIsDataSaved(exists);
+          })
+          .catch((error) => {
+            console.error('Error checking PDF data:', error);
+            setIsDataSaved(false);
+          });
+      } else {
+        setIsDataSaved(false);
+      }
+    } else {
+      setIsDataSaved(false);
     }
-  };
+  }, [openedEntry?.path, openedEntry?.name]);
+  
+const handleParsePdf = useCallback(async () => {
+  if (!location || !openedEntry || !openedEntry.path) {
+    console.warn('PDF parsing aborted: Missing location or file entry');
+    return;
+  }
+  
+  if (parserLoading) {
+    console.warn('PDF parsing already in progress');
+    return;
+  }
+
+    console.log('Starting PDF parsing process...');
+  setParserLoading(true);
+  setParseProgress(0);
+  setParserText('');
+  setParserJSON('');
+  setParserLinks([]);
+
+  // Initialize OpenAI with better error handling
+  console.log('[EntryProperties] Starting OpenAI initialization check...');
+  let openAIAvailable = isOpenAIInitialized();
+  console.log('[EntryProperties] Initial check - openAIAvailable:', openAIAvailable);
+  if (!openAIAvailable) {
+    console.log('[EntryProperties] OpenAI not initialized, attempting initialization...');
+    
+    // Try Pro settings first
+    const proKey = Pro?.Settings?.getOpenAIKey?.();
+    if (proKey) {
+      console.log('[EntryProperties] Using Pro OpenAI key');
+      try {
+        openAIAvailable = initOpenAI(proKey);
+        console.log('[EntryProperties] Pro key initialization result:', openAIAvailable);
+      } catch (error) {
+        console.error('[EntryProperties] Failed to initialize OpenAI with Pro key:', error);
+        openAIAvailable = false;
+      }
+    } else {
+      console.log('[EntryProperties] No Pro key found');
+    }
+    
+    // If still not available, try default (development only)
+    if (!openAIAvailable) {
+      console.log('[EntryProperties] Checking NODE_ENV:', process.env.NODE_ENV);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[EntryProperties] Trying default OpenAI key for development');
+        const initResult = ensureInitFromDefault();
+        console.log('[EntryProperties] ensureInitFromDefault returned:', initResult);
+        openAIAvailable = initResult;
+        if (openAIAvailable) {
+          console.log('[EntryProperties] OpenAI initialized with default key');
+        } else {
+          console.warn('[EntryProperties] Failed to initialize OpenAI with default key');
+        }
+      } else {
+        console.log('[EntryProperties] Not in development mode, skipping default key');
+      }
+    }
+    
+    if (!openAIAvailable) {
+      console.warn('[EntryProperties] OpenAI initialization failed - will extract text only');
+    } else {
+      console.log('[EntryProperties] OpenAI is now available!');
+    }
+  } else {
+    console.log('[EntryProperties] OpenAI already initialized');
+  }
+
+  try {
+    const ext = extractFileExtension(openedEntry.name || openedEntry.path)?.toLowerCase();
+    console.log('Reading file for parsing:', openedEntry.path, 'ext=', ext);
+    const buffer = await location.getFileContentPromise(
+      openedEntry.path,
+      'arraybuffer',
+    );
+
+    let result: { text: string; links: Array<{url: string; text: string}>; numPages: number } = { text: '', links: [], numPages: 0 };
+
+    if (ext === 'pdf') {
+      console.log('Extracting text from PDF...');
+      result = await extractPDFcontent(
+        buffer as ArrayBuffer,
+        {
+          startPage: pageRange.start || 1,
+          endPage: pageRange.end || undefined,
+        },
+        (progress) => {
+          const progressPercent = Math.round(progress * 100);
+          if (progressPercent % 10 === 0) {
+            console.log(`PDF extraction progress: ${progressPercent}%`);
+          }
+          setParseProgress(progress);
+        },
+      );
+      console.log(`PDF parsed successfully. Total pages: ${result.numPages}`);
+      setTotalPages(result.numPages);
+    } else if (docLikeExts.includes(ext)) {
+      console.log('Extracting text from document (docx/odt/etc)...');
+      try {
+        const docRes = await extractDocContent(buffer as ArrayBuffer);
+        result = { text: docRes.text || '', links: docRes.links || [], numPages: docRes.numPages || 1 };
+        console.log(`Document parsed successfully. Items: text length=${(result.text || '').length}, links=${result.links.length}`);
+        setTotalPages(result.numPages || 1);
+      } catch (docErr) {
+        console.error('Error extracting document content:', docErr);
+        throw docErr;
+      }
+    } else {
+      console.warn('Unsupported file extension for parsing:', ext);
+      setParserText(t('core:unsupportedFileType') || 'Unsupported file type for parsing');
+      return;
+    }
+    
+    // Format text with links included
+    let formattedText = result.text || t('core:noTextExtracted');
+    if (result.links && result.links.length > 0) {
+      const linksSection = '\n\n--- Extracted Links ---\n' + 
+        result.links.map(link => `${link.text}: ${link.url}`).join('\n');
+      formattedText += linksSection;
+      setParserLinks(result.links);
+    } else {
+      setParserLinks([]);
+    }
+    
+    setParserText(formattedText);
+
+    if (!pageRange.end) {
+      setPageRange(prev => ({
+        start: prev.start || 1,
+        end: result.numPages
+      }));
+    }
+
+    // Only attempt JSON conversion if OpenAI is available AND we have text
+    if (openAIAvailable && result.text && result.text.trim().length > 0) {
+      try {
+        console.log('Converting text to JSON via OpenAI...');
+        setParserJSON(t('core:convertingToJSON') || 'Converting to JSON...');
+        
+        // Include links in the text sent to OpenAI
+        const textWithLinks = formattedText;
+        
+        const jsonResult = Pro?.OpenAI?.convertToJSON
+          ? await Pro.OpenAI.convertToJSON(textWithLinks)
+          : await convertToJSONService(textWithLinks);
+        
+        console.log('JSON conversion completed');
+        setParserJSON(jsonResult);
+        
+        // Validate JSON structure
+        try {
+          JSON.parse(jsonResult);
+          console.log('JSON validation successful');
+        } catch (parseError) {
+          console.warn('Generated JSON may have formatting issues:', parseError);
+          // Keep the JSON even if validation fails - it might still be useful
+        }
+      } catch (aiError) {
+        console.error('OpenAI conversion failed:', aiError);
+        setParserJSON(t('core:aiConversionFailed') || 'AI conversion failed: ' + aiError.message);
+        showNotification(t('core:aiConversionFailed') || 'AI conversion failed');
+      }
+    } else {
+      const noConversionReason = !openAIAvailable 
+        ? 'OpenAI not available' 
+        : 'No text content extracted';
+      console.log(noConversionReason);
+      setParserJSON(noConversionReason);
+    }
+
+    if (!parserOpen) {
+      setParserOpen(true);
+    }
+  } catch (err) {
+    console.error('Error parsing PDF:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    showNotification(`${t('core:pdfParseFailed')}: ${errorMessage}` || `PDF parse failed: ${errorMessage}`);
+    setParserText(`${t('core:pdfParseFailed')}: ${errorMessage}` || `PDF parse failed: ${errorMessage}`);
+  } finally {
+    console.log('PDF parsing process completed');
+    setParserLoading(false);
+    setParseProgress(0);
+  }
+}, [location, openedEntry, pageRange, parserLoading, parserOpen, Pro, showNotification, t]);
+
+  const handleSaveToDb = useCallback(async () => {
+    if (!openedEntry?.path || !parserText || !parserJSON) {
+      showNotification(t('core:noDataToSave') || 'No data to save');
+      return;
+    }
+
+    try {
+      const fileName = openedEntry.name || 'unknown.pdf';
+      const result = await savePdfData(
+        openedEntry.path,
+        fileName,
+        parserText,
+        parserJSON,
+      );
+
+      if (result.success) {
+        setIsDataSaved(true);
+        showNotification(t('core:dataSavedToDb') || 'Data saved to database');
+        // Re-check to ensure state is updated
+        checkPdfDataExists(openedEntry.path).then((exists) => {
+          setIsDataSaved(exists);
+        });
+      } else {
+        showNotification(
+          t('core:saveToDbFailed') || 'Failed to save: ' + (result.message || 'Unknown error'),
+        );
+      }
+    } catch (error) {
+      console.error('Error saving to database:', error);
+      showNotification(
+        t('core:saveToDbFailed') || 'Failed to save to database',
+      );
+    }
+  }, [openedEntry, parserText, parserJSON, showNotification, t]);
+
+  const handleLoadFromDb = useCallback(async () => {
+    if (!openedEntry?.path) {
+      showNotification(t('core:noFileSelected') || 'No file selected');
+      return;
+    }
+
+    setLoadingFromDb(true);
+    try {
+      const result = await loadPdfData(openedEntry.path);
+
+      if (result.success && result.data) {
+        setParserText(result.data.parsed_text || '');
+        setParserJSON(result.data.parsed_json || '');
+        // Try to extract links from the text if they were saved
+        const text = result.data.parsed_text || '';
+        const linksMatch = text.match(/--- Extracted Links ---\n([\s\S]*?)(?=\n\n|$)/);
+        if (linksMatch) {
+          const linksText = linksMatch[1];
+          const links: Array<{url: string; text: string}> = [];
+          linksText.split('\n').forEach(line => {
+            const match = line.match(/^(.+?):\s*(.+)$/);
+            if (match) {
+              links.push({ text: match[1].trim(), url: match[2].trim() });
+            }
+          });
+          setParserLinks(links);
+        } else {
+          setParserLinks([]);
+        }
+        showNotification(t('core:dataLoadedFromDb') || 'Data loaded from database');
+        if (!parserOpen) {
+          setParserOpen(true);
+        }
+      } else {
+        showNotification(
+          t('core:noDataInDb') || 'No data found in database',
+        );
+      }
+    } catch (error) {
+      console.error('Error loading from database:', error);
+      showNotification(
+        t('core:loadFromDbFailed') || 'Failed to load from database',
+      );
+    } finally {
+      setLoadingFromDb(false);
+    }
+  }, [openedEntry, parserOpen, showNotification, t]);
 
   useEffect(() => {
     if (editName === entryName && fileNameRef.current) {
@@ -502,6 +807,7 @@ function EntryProperties({ tileServer }: Props) {
     openedEntry.path,
     location?.getDirSeparator(),
   ).toLowerCase();
+  const docLikeExts = ['doc', 'docx', 'odt', 'rtf'];
 
   const changePerspective = useCallback(
     (event: any) => {
@@ -867,16 +1173,45 @@ function EntryProperties({ tileServer }: Props) {
                             >
                               {t('core:moveFile')}
                             </TsButton>
-                            {fileExt === 'pdf' && (
-                              <TsButton
-                                data-tid="parsePdfTID"
-                                onClick={handleParsePdf}
-                                variant="text"
-                                disabled={parserLoading}
-                                sx={{ marginLeft: '8px' }}
-                              >
-                                {parserLoading ? t('core:parsing') : t('core:parsePdf') || 'Parse PDF'}
-                              </TsButton>
+                            {(fileExt === 'pdf' || docLikeExts.includes(fileExt)) && (
+                              <>
+                                <TsButton
+                                  data-tid="parsePdfTID"
+                                  onClick={handleParsePdf}
+                                  variant="text"
+                                  disabled={parserLoading}
+                                  sx={{ marginLeft: '8px' }}
+                                >
+                                  {parserLoading ? (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <CircularProgress size={16} sx={{ color: theme.palette.primary.main }} />
+                                      <span>{t('core:parsing') || 'Parsing...'}</span>
+                                    </Box>
+                                  ) : (
+                                    // Use a different label for docs
+                                    docLikeExts.includes(fileExt)
+                                      ? t('core:parseDoc') || 'Parse Document'
+                                      : t('core:parsePdf') || 'Parse PDF'
+                                  )}
+                                </TsButton>
+                                <TsButton
+                                  data-tid="showJsonFromDbTID"
+                                  onClick={handleLoadFromDb}
+                                  variant="text"
+                                  disabled={!isDataSaved || loadingFromDb}
+                                  sx={{ marginLeft: '8px' }}
+                                >
+                                  {loadingFromDb ? (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <CircularProgress size={16} sx={{ color: theme.palette.primary.main }} />
+                                      <span>{t('core:loading') || 'Loading...'}</span>
+                                    </Box>
+                                  ) : (
+                                    // Keep label same for docs
+                                    t('core:showJsonFromDb') || 'Show JSON from DB'
+                                  )}
+                                </TsButton>
+                              </>
                             )}
                           </>
                         )}
@@ -1262,20 +1597,25 @@ function EntryProperties({ tileServer }: Props) {
           currentDirectoryPath={openedEntry.path}
         />
       )}
-      {parserOpen && (
-        <Dialog
+        {parserOpen && (
+        <PDFParserDialog
           open={parserOpen}
           onClose={() => setParserOpen(false)}
-          fullWidth
-          maxWidth="md"
-        >
-          <DialogTitle>{t('core:parsedPdf') || 'Parsed PDF'}</DialogTitle>
-          <DialogContent dividers>
-            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-              {parserText || t('core:noTextExtracted')}
-            </pre>
-          </DialogContent>
-        </Dialog>
+          parserLoading={parserLoading}
+          parseProgress={parseProgress}
+          parserText={parserText}
+          parserJSON={parserJSON}
+          parserLinks={parserLinks}
+          totalPages={totalPages}
+          pageRange={pageRange}
+          onStartParsing={handleParsePdf}
+          onPageRangeChange={setPageRange}
+          filePath={openedEntry?.path}
+          fileName={openedEntry?.name}
+          fileType={fileExt}
+          isDataSaved={isDataSaved}
+          onSaveToDb={handleSaveToDb}
+        />
       )}
     </div>
   );

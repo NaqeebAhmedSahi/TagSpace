@@ -1,4 +1,5 @@
 import 'webpack-dev-server';
+import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import webpack from 'webpack';
@@ -17,6 +18,9 @@ import checkNodeEnv from '../scripts/check-node-env';
 if (process.env.NODE_ENV === 'production') {
   checkNodeEnv('development');
 }
+
+// Load environment variables from .env for development
+dotenv.config();
 
 const port = process.env.PORT || 1212;
 const manifest = path.resolve(webpackPaths.dllPath, 'renderer.json');
@@ -156,6 +160,7 @@ const configuration: webpack.Configuration = {
      */
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'development',
+      REACT_APP_OPENAI_KEY: process.env.REACT_APP_OPENAI_KEY || '',
     }),
 
     new webpack.LoaderOptionsPlugin({

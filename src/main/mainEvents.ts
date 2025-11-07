@@ -284,6 +284,195 @@ export default function loadMainEvents() {
     }
   });
 
+  // PDF Data Storage Database (using auth.db)
+  const initPdfDataDb = async () => {
+    try {
+      const userData = app.getPath('userData');
+      await fs.ensureDir(userData);
+      const dbPath = path.join(userData, 'auth.db');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sqlite3mod = require('sqlite3');
+      let sql: any = sqlite3mod;
+      try {
+        if (sqlite3mod && typeof sqlite3mod.verbose === 'function') {
+          sql = sqlite3mod.verbose();
+        } else if (sqlite3mod && sqlite3mod.default && typeof sqlite3mod.default.verbose === 'function') {
+          sql = sqlite3mod.default.verbose();
+        }
+      } catch (e) {
+        // ignore
+      }
+      const DatabaseCtor: any = (sql && sql.Database) || (sqlite3mod && sqlite3mod.Database) || (sqlite3mod && sqlite3mod.default && sqlite3mod.default.Database) || null;
+      if (!DatabaseCtor) {
+        throw new Error('sqlite3 Database constructor not found');
+      }
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          db.run(
+            `CREATE TABLE IF NOT EXISTS pdf_parsed_data (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              file_path TEXT NOT NULL UNIQUE,
+              file_name TEXT NOT NULL,
+              parsed_text TEXT,
+              parsed_json TEXT,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`,
+            (createErr) => {
+              if (createErr) {
+                db.close();
+                return reject(createErr);
+              }
+              db.close();
+              return resolve(true);
+            },
+          );
+        });
+      });
+    } catch (e) {
+      console.error('initPdfDataDb error:', e);
+      throw e;
+    }
+  };
+
+  ipcMain.handle('pdf-data-init', async () => {
+    try {
+      await initPdfDataDb();
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
+  });
+
+  ipcMain.handle('pdf-data-save', async (event, filePath: string, fileName: string, parsedText: string, parsedJson: string) => {
+    try {
+      const userData = app.getPath('userData');
+      const dbPath = path.join(userData, 'auth.db');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sqlite3mod = require('sqlite3');
+      let sql: any = sqlite3mod;
+      try {
+        if (sqlite3mod && typeof sqlite3mod.verbose === 'function') {
+          sql = sqlite3mod.verbose();
+        } else if (sqlite3mod && sqlite3mod.default && typeof sqlite3mod.default.verbose === 'function') {
+          sql = sqlite3mod.default.verbose();
+        }
+      } catch (e) {
+        // ignore
+      }
+      const DatabaseCtor: any = (sql && sql.Database) || (sqlite3mod && sqlite3mod.Database) || (sqlite3mod && sqlite3mod.default && sqlite3mod.default.Database) || null;
+      if (!DatabaseCtor) {
+        throw new Error('sqlite3 Database constructor not found');
+      }
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          db.run(
+            `INSERT OR REPLACE INTO pdf_parsed_data (file_path, file_name, parsed_text, parsed_json, updated_at)
+             VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+            [filePath, fileName, parsedText, parsedJson],
+            function(insErr) {
+              if (insErr) {
+                db.close();
+                return reject(insErr);
+              }
+              db.close();
+              return resolve({ success: true, id: this.lastID });
+            },
+          );
+        });
+      });
+    } catch (e) {
+      console.error('pdf-data-save error:', e);
+      return { success: false, message: e.message };
+    }
+  });
+
+  ipcMain.handle('pdf-data-load', async (event, filePath: string) => {
+    try {
+      const userData = app.getPath('userData');
+      const dbPath = path.join(userData, 'auth.db');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sqlite3mod = require('sqlite3');
+      let sql: any = sqlite3mod;
+      try {
+        if (sqlite3mod && typeof sqlite3mod.verbose === 'function') {
+          sql = sqlite3mod.verbose();
+        } else if (sqlite3mod && sqlite3mod.default && typeof sqlite3mod.default.verbose === 'function') {
+          sql = sqlite3mod.default.verbose();
+        }
+      } catch (e) {
+        // ignore
+      }
+      const DatabaseCtor: any = (sql && sql.Database) || (sqlite3mod && sqlite3mod.Database) || (sqlite3mod && sqlite3mod.default && sqlite3mod.default.Database) || null;
+      if (!DatabaseCtor) {
+        throw new Error('sqlite3 Database constructor not found');
+      }
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          db.get(
+            `SELECT * FROM pdf_parsed_data WHERE file_path = ?`,
+            [filePath],
+            (getErr, row) => {
+              db.close();
+              if (getErr) return reject(getErr);
+              if (row) {
+                return resolve({ success: true, data: row });
+              } else {
+                return resolve({ success: false, message: 'No data found' });
+              }
+            },
+          );
+        });
+      });
+    } catch (e) {
+      console.error('pdf-data-load error:', e);
+      return { success: false, message: e.message };
+    }
+  });
+
+  ipcMain.handle('pdf-data-check', async (event, filePath: string) => {
+    try {
+      const userData = app.getPath('userData');
+      const dbPath = path.join(userData, 'auth.db');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sqlite3mod = require('sqlite3');
+      let sql: any = sqlite3mod;
+      try {
+        if (sqlite3mod && typeof sqlite3mod.verbose === 'function') {
+          sql = sqlite3mod.verbose();
+        } else if (sqlite3mod && sqlite3mod.default && typeof sqlite3mod.default.verbose === 'function') {
+          sql = sqlite3mod.default.verbose();
+        }
+      } catch (e) {
+        // ignore
+      }
+      const DatabaseCtor: any = (sql && sql.Database) || (sqlite3mod && sqlite3mod.Database) || (sqlite3mod && sqlite3mod.default && sqlite3mod.default.Database) || null;
+      if (!DatabaseCtor) {
+        throw new Error('sqlite3 Database constructor not found');
+      }
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          db.get(
+            `SELECT COUNT(*) as count FROM pdf_parsed_data WHERE file_path = ?`,
+            [filePath],
+            (getErr, row) => {
+              db.close();
+              if (getErr) return reject(getErr);
+              return resolve({ success: true, exists: (row.count > 0) });
+            },
+          );
+        });
+      });
+    } catch (e) {
+      console.error('pdf-data-check error:', e);
+      return { success: false, message: e.message };
+    }
+  });
+
   ipcMain.handle('auth-login', async (event, username: string, password: string) => {
     try {
       const userData = app.getPath('userData');

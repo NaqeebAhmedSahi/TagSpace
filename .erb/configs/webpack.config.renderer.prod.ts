@@ -3,6 +3,7 @@
  */
 
 import path from 'path';
+import dotenv from 'dotenv';
 import webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
@@ -17,6 +18,9 @@ import deleteSourceMaps from '../scripts/delete-source-maps';
 
 checkNodeEnv('production');
 deleteSourceMaps();
+
+// Load environment variables from .env for production build time
+dotenv.config();
 
 const configuration: webpack.Configuration = {
   devtool: 'source-map',
@@ -115,6 +119,7 @@ const configuration: webpack.Configuration = {
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
       DEBUG_PROD: false,
+      REACT_APP_OPENAI_KEY: process.env.REACT_APP_OPENAI_KEY || '',
     }),
 
     new MiniCssExtractPlugin({

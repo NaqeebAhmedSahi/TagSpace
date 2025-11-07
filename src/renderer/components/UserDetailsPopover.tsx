@@ -16,6 +16,7 @@
  *
  */
 
+import AppConfig from '-/AppConfig';
 import TsButton from '-/components/TsButton';
 import { useUserContext } from '-/hooks/useUserContext';
 import { Pro } from '-/pro';
@@ -39,7 +40,7 @@ function UserDetailsPopover(props: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
   const { onClose } = props;
-  const { currentUser } = useUserContext();
+  const { currentUser, loggedIn } = useUserContext();
 
   const [isSetupTOTPOpened, setSetupTOTPOpened] = useState<boolean>(false);
   const SetupTOTPDialog = Pro && Pro.UI ? Pro.UI.SetupTOTPDialog : false;
@@ -60,7 +61,18 @@ function UserDetailsPopover(props: Props) {
   }
 
   const signOut = () => {
-    Auth.signOut();
+    // Check if using Amplify auth
+    if (AppConfig.isAmplify && Auth) {
+      Auth.signOut();
+    } else {
+      // For demo login, just clear the user
+      if (loggedIn) {
+        loggedIn(undefined);
+      }
+      // Clear the global demo user
+      // @ts-ignore
+      window.ExtDemoUser = undefined;
+    }
     clearAllURLParams();
     onClose();
   };

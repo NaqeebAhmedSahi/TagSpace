@@ -40,7 +40,7 @@ import {
   WorkspacesIcon,
 } from '-/components/CommonIcons';
 import CustomLogo from '-/components/CustomLogo';
-import HelpFeedbackPanel from '-/components/HelpFeedbackPanel';
+// import HelpFeedbackPanel from '-/components/HelpFeedbackPanel';
 import { ProLabel } from '-/components/HelperComponents';
 import InfoIcon from '-/components/InfoIcon';
 import LocationManager from '-/components/LocationManager';
@@ -72,6 +72,7 @@ import {
 import { createNewInstance } from '-/services/utils-io';
 import { TS } from '-/tagspaces.namespace';
 import ArrowDropDown from '@mui/icons-material/ArrowDropDown';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { ClickAwayListener, Divider, Popover } from '@mui/material';
 import Box from '@mui/material/Box';
 import ButtonGroup from '@mui/material/ButtonGroup';
@@ -117,7 +118,7 @@ function MobileNavigation(props: Props) {
   const { currentOpenedPanel, showPanel } = usePanelsContext();
   const { openDownloadUrl } = useDownloadUrlDialogContext();
   const keyBindings = useSelector(getKeyBindingObject);
-  const { currentUser } = useUserContext();
+  const { currentUser, loggedIn } = useUserContext();
   const [showTeaserBanner, setShowTeaserBanner] = useState(true);
   const [anchorUser, setAnchorUser] = useState<HTMLButtonElement | null>(null);
   const showProTeaser = !Pro && showTeaserBanner;
@@ -588,9 +589,9 @@ function MobileNavigation(props: Props) {
         {currentOpenedPanel === 'searchPanel' && (
           <StoredSearches reduceHeightBy={desktopMode ? 140 : 165} />
         )}
-        {currentOpenedPanel === 'helpFeedbackPanel' && (
+        {/* {currentOpenedPanel === 'helpFeedbackPanel' && (
           <HelpFeedbackPanel reduceHeightBy={desktopMode ? 150 : 175} />
-        )}
+        )} */}
       </Box>
       <Box
         sx={{
@@ -656,7 +657,7 @@ function MobileNavigation(props: Props) {
           >
             <RecentThingsIcon />
           </TsToolbarButton>
-          <TsToolbarButton
+          {/* <TsToolbarButton
             tooltip={t('core:helpFeedback')}
             title={t('core:help')}
             data-tid="helpFeedback"
@@ -669,7 +670,7 @@ function MobileNavigation(props: Props) {
             }}
           >
             <HelpIcon />
-          </TsToolbarButton>
+          </TsToolbarButton> */}
           <TsToolbarButton
             tooltip={t('core:settings')}
             id="verticalNavButton"
@@ -682,6 +683,26 @@ function MobileNavigation(props: Props) {
             title={t('core:settings')}
           >
             <SettingsIcon />
+          </TsToolbarButton>
+          <TsToolbarButton
+            tooltip={t('core:logout') || 'Logout'}
+            data-tid="logoutButton"
+            onClick={() => {
+              // For demo login, clear the user
+              if (loggedIn) {
+                loggedIn(undefined);
+              }
+              // Clear the global demo user
+              // @ts-ignore
+              window.ExtDemoUser = undefined;
+            }}
+            sx={{
+              marginLeft: '10px',
+              backgroundColor: theme.palette.background.default,
+            }}
+            title={t('core:logout') || 'Logout'}
+          >
+            <ExitToAppIcon />
           </TsToolbarButton>
         </Box>
       </Box>
