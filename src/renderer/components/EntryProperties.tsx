@@ -115,12 +115,11 @@ import { useSelector } from 'react-redux';
 import { Pro } from '../pro';
 import { extractPDFcontent } from '-/services/thumbsgenerator';
 import { extractDocContent } from '-/services/docParser';
-import {
-  isOpenAIInitialized,
-  ensureInitFromDefault,
-  initOpenAI,
-  convertToJSON as convertToJSONService,
-} from '-/services/openai';
+import { processTextWithAI } from '-/services/ai/langchain';
+import { useAIConfig } from '-/services/ai/useAIConfig';
+import { useSettingsDialogContext } from '-/components/dialogs/hooks/useSettingsDialogContext';
+import { SettingsTab } from '-/components/dialogs/SettingsDialog';
+import { REDIRECT_TO_AI_SETTINGS_EVENT } from './dialogs/components/SettingsAI';
 import PDFParserDialog from './dialogs/PDFParserDialog';
 import {
   initPdfDataDb,
@@ -194,6 +193,8 @@ function EntryProperties({ tileServer }: Props) {
   const { addTagsToFsEntry, removeTagsFromEntry } = useTaggingActionsContext();
   const { findLocation } = useCurrentLocationContext();
   const { showNotification, openConfirmDialog } = useNotificationContext();
+  const { openSettingsDialog } = useSettingsDialogContext();
+  const { config: aiConfig, isValid: aiConfigValid, isLoading: aiConfigLoading } = useAIConfig();
   const thumbDialogContext = Pro?.contextProviders?.ThumbDialogContext
     ? useContext<TS.ThumbDialogContextData>(
         Pro.contextProviders.ThumbDialogContext,
@@ -350,64 +351,76 @@ const handleParsePdf = useCallback(async () => {
     return;
   }
 
-    console.log('Starting PDF parsing process...');
+  // Check if AI API key is configured
+  const ext = extractFileExtension(openedEntry.name || openedEntry.path)?.toLowerCase();
+  const isPdf = ext === 'pdf';
+  const isDoc = docLikeExts.includes(ext);
+  
+  // Wait for config to load if still loading
+  if (aiConfigLoading) {
+    console.log('[EntryProperties] Waiting for AI config to load...');
+    // Don't proceed until config is loaded
+    return;
+  }
+  
+  // Try to get the latest active key directly from the DB in case it was just toggled
+  let effectiveConfig = aiConfig;
+  if (window.electronIO?.ipcRenderer) {
+    try {
+      // fetch currently active key (may be null)
+      // do not block UI for too long, but await here to ensure accurate permission check
+      // if this call fails we fall back to the hook-provided config
+      // eslint-disable-next-line no-await-in-loop
+      const activeKey = await window.electronIO.ipcRenderer.invoke('ai-key-get-active');
+      // activeKey will only be returned if is_active = 1 in DB
+      if (activeKey?.api_key && activeKey.is_active === 1) {
+        effectiveConfig = {
+          provider: activeKey.provider,
+          apiKey: activeKey.api_key,
+          model: activeKey.model || '',
+          temperature: activeKey.temperature || 0.7,
+        } as any;
+      } else {
+        effectiveConfig = null; // Clear config if key not active
+      }
+    } catch (e) {
+      // ignore and continue with aiConfig from hook
+      // eslint-disable-next-line no-console
+      console.warn('[EntryProperties] Failed to read active AI key from DB:', e);
+    }
+  }
+
+  // Check if AI is properly configured and key is active (status = 1 in DB)
+  const hasValidApiKey = effectiveConfig?.apiKey && effectiveConfig.apiKey.trim().length > 0;
+  const providerDetected = effectiveConfig?.provider && effectiveConfig.provider !== 'unknown';
+  const shouldAllowParsing = effectiveConfig !== null && hasValidApiKey && providerDetected;
+  
+  if ((isPdf || isDoc) && !shouldAllowParsing) {
+    console.warn('[EntryProperties] AI config missing or invalid:', {
+      hasConfig: !!aiConfig,
+      isValid: aiConfigValid,
+      hasApiKey: !!aiConfig?.apiKey,
+      apiKeyLength: aiConfig?.apiKey?.length || 0,
+      provider: aiConfig?.provider,
+      providerDetected,
+    });
+    // Only show a notification here. Do not redirect to settings automatically.
+    showNotification(
+      t('core:aiKeyRequiredForParsing') ||
+        'AI API key is required to use PDF/Document parser. Click Connect to configure it in Settings.',
+      'warning',
+    );
+    return;
+  }
+
+  console.log('Starting PDF parsing process...');
   setParserLoading(true);
   setParseProgress(0);
   setParserText('');
   setParserJSON('');
   setParserLinks([]);
 
-  // Initialize OpenAI with better error handling
-  console.log('[EntryProperties] Starting OpenAI initialization check...');
-  let openAIAvailable = isOpenAIInitialized();
-  console.log('[EntryProperties] Initial check - openAIAvailable:', openAIAvailable);
-  if (!openAIAvailable) {
-    console.log('[EntryProperties] OpenAI not initialized, attempting initialization...');
-    
-    // Try Pro settings first
-    const proKey = Pro?.Settings?.getOpenAIKey?.();
-    if (proKey) {
-      console.log('[EntryProperties] Using Pro OpenAI key');
-      try {
-        openAIAvailable = initOpenAI(proKey);
-        console.log('[EntryProperties] Pro key initialization result:', openAIAvailable);
-      } catch (error) {
-        console.error('[EntryProperties] Failed to initialize OpenAI with Pro key:', error);
-        openAIAvailable = false;
-      }
-    } else {
-      console.log('[EntryProperties] No Pro key found');
-    }
-    
-    // If still not available, try default (development only)
-    if (!openAIAvailable) {
-      console.log('[EntryProperties] Checking NODE_ENV:', process.env.NODE_ENV);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[EntryProperties] Trying default OpenAI key for development');
-        const initResult = ensureInitFromDefault();
-        console.log('[EntryProperties] ensureInitFromDefault returned:', initResult);
-        openAIAvailable = initResult;
-        if (openAIAvailable) {
-          console.log('[EntryProperties] OpenAI initialized with default key');
-        } else {
-          console.warn('[EntryProperties] Failed to initialize OpenAI with default key');
-        }
-      } else {
-        console.log('[EntryProperties] Not in development mode, skipping default key');
-      }
-    }
-    
-    if (!openAIAvailable) {
-      console.warn('[EntryProperties] OpenAI initialization failed - will extract text only');
-    } else {
-      console.log('[EntryProperties] OpenAI is now available!');
-    }
-  } else {
-    console.log('[EntryProperties] OpenAI already initialized');
-  }
-
   try {
-    const ext = extractFileExtension(openedEntry.name || openedEntry.path)?.toLowerCase();
     console.log('Reading file for parsing:', openedEntry.path, 'ext=', ext);
     const buffer = await location.getFileContentPromise(
       openedEntry.path,
@@ -416,7 +429,7 @@ const handleParsePdf = useCallback(async () => {
 
     let result: { text: string; links: Array<{url: string; text: string}>; numPages: number } = { text: '', links: [], numPages: 0 };
 
-    if (ext === 'pdf') {
+    if (isPdf) {
       console.log('Extracting text from PDF...');
       result = await extractPDFcontent(
         buffer as ArrayBuffer,
@@ -434,7 +447,7 @@ const handleParsePdf = useCallback(async () => {
       );
       console.log(`PDF parsed successfully. Total pages: ${result.numPages}`);
       setTotalPages(result.numPages);
-    } else if (docLikeExts.includes(ext)) {
+    } else if (isDoc) {
       console.log('Extracting text from document (docx/odt/etc)...');
       try {
         const docRes = await extractDocContent(buffer as ArrayBuffer);
@@ -471,18 +484,39 @@ const handleParsePdf = useCallback(async () => {
       }));
     }
 
-    // Only attempt JSON conversion if OpenAI is available AND we have text
-    if (openAIAvailable && result.text && result.text.trim().length > 0) {
+    // Only attempt JSON conversion if AI is configured AND we have text
+    // Use the same check as above - be lenient if provider is detected
+    const canUseAI = aiConfig && aiConfig.apiKey && aiConfig.apiKey.trim().length > 0 && 
+                     aiConfig.provider && aiConfig.provider !== 'unknown';
+    
+    if (canUseAI && result.text && result.text.trim().length > 0) {
       try {
-        console.log('Converting text to JSON via OpenAI...');
+        console.log('Converting text to JSON via AI...');
+        console.log('AI Config:', { 
+          provider: aiConfig.provider, 
+          hasApiKey: !!aiConfig.apiKey,
+          apiKeyLength: aiConfig.apiKey?.length || 0,
+          model: aiConfig.model 
+        });
         setParserJSON(t('core:convertingToJSON') || 'Converting to JSON...');
         
-        // Include links in the text sent to OpenAI
+        // Include links in the text sent to AI
         const textWithLinks = formattedText;
+        
+        // Use LangChain to process with configured AI provider
+        const prompt = `Convert the following text into a structured JSON format. Extract key information, entities, and organize it logically:\n\n${textWithLinks}`;
+        
+        // Ensure we have a valid config with API key
+        if (!aiConfig.apiKey || aiConfig.apiKey.trim().length === 0) {
+          throw new Error('API key is missing from configuration');
+        }
         
         const jsonResult = Pro?.OpenAI?.convertToJSON
           ? await Pro.OpenAI.convertToJSON(textWithLinks)
-          : await convertToJSONService(textWithLinks);
+          : await processTextWithAI(prompt, {
+              ...aiConfig,
+              apiKey: aiConfig.apiKey.trim(), // Ensure trimmed
+            });
         
         console.log('JSON conversion completed');
         setParserJSON(jsonResult);
@@ -496,13 +530,24 @@ const handleParsePdf = useCallback(async () => {
           // Keep the JSON even if validation fails - it might still be useful
         }
       } catch (aiError) {
-        console.error('OpenAI conversion failed:', aiError);
-        setParserJSON(t('core:aiConversionFailed') || 'AI conversion failed: ' + aiError.message);
-        showNotification(t('core:aiConversionFailed') || 'AI conversion failed');
+        console.error('AI conversion failed:', aiError);
+        const errorMsg = aiError instanceof Error ? aiError.message : 'Unknown error';
+        const detailedError = errorMsg.includes('API key') 
+          ? 'Invalid API key. Please check your API key in Settings > AI.'
+          : errorMsg.includes('rate limit') || errorMsg.includes('quota')
+          ? 'API rate limit exceeded. Please try again later.'
+          : errorMsg.includes('network') || errorMsg.includes('fetch')
+          ? 'Network error. Please check your internet connection.'
+          : errorMsg;
+        setParserJSON(t('core:aiConversionFailed') || 'AI conversion failed: ' + detailedError);
+        showNotification(
+          t('core:aiConversionFailed') || 'AI conversion failed: ' + detailedError,
+          'error'
+        );
       }
     } else {
-      const noConversionReason = !openAIAvailable 
-        ? 'OpenAI not available' 
+      const noConversionReason = !aiConfig || !aiConfigValid
+        ? t('core:aiNotConfigured') || 'AI not configured'
         : 'No text content extracted';
       console.log(noConversionReason);
       setParserJSON(noConversionReason);
@@ -521,7 +566,7 @@ const handleParsePdf = useCallback(async () => {
     setParserLoading(false);
     setParseProgress(0);
   }
-}, [location, openedEntry, pageRange, parserLoading, parserOpen, Pro, showNotification, t]);
+}, [location, openedEntry, pageRange, parserLoading, parserOpen, Pro, showNotification, t, aiConfig, aiConfigValid, aiConfigLoading, openSettingsDialog]);
 
   const handleSaveToDb = useCallback(async () => {
     if (!openedEntry?.path || !parserText || !parserJSON) {
@@ -1194,6 +1239,32 @@ const handleParsePdf = useCallback(async () => {
                                       : t('core:parsePdf') || 'Parse PDF'
                                   )}
                                 </TsButton>
+
+                                {/* Show Connect button when AI not configured */}
+                                {(!aiConfig || !aiConfigValid || !aiConfig.apiKey || aiConfig.apiKey.trim().length === 0) && (
+                                  <TsButton
+                                    data-tid="connectAiTID"
+                                    onClick={() => {
+                                      openSettingsDialog(SettingsTab.AI);
+                                      // After opening settings dialog, dispatch redirect event so SettingsAI can show redirect modal
+                                      // Use a short timeout to allow the settings component to mount and register its listener
+                                      setTimeout(() => {
+                                        try {
+                                          const feature = fileExt === 'pdf' ? 'pdf' : 'doc';
+                                          window.dispatchEvent(new CustomEvent(REDIRECT_TO_AI_SETTINGS_EVENT, { detail: { feature } }));
+                                        } catch (e) {
+                                          // ignore
+                                        }
+                                      }, 120);
+                                    }}
+                                    variant="contained"
+                                    color="primary"
+                                    sx={{ marginLeft: '8px' }}
+                                  >
+                                    {t('core:connectAi') || 'Connect AI'}
+                                  </TsButton>
+                                )}
+
                                 <TsButton
                                   data-tid="showJsonFromDbTID"
                                   onClick={handleLoadFromDb}

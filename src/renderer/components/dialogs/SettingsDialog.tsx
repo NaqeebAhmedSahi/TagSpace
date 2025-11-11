@@ -99,11 +99,12 @@ function SettingsDialog(props: Props) {
   const renderContent = (
     <DialogContent
       style={{
-        overflowY: 'hidden',
-        overflowX: 'hidden',
         display: smallScreen ? 'block' : 'flex',
         flexGrow: 1,
         padding: smallScreen ? 0 : '0 20px',
+        height: 'calc(90vh - 120px)', // Adjust for header/footer
+        maxHeight: 'calc(90vh - 120px)',
+        overflow: 'hidden' // Hide dialog content overflow
       }}
     >
       <Tabs

@@ -324,24 +324,44 @@ function GridPerspective(props: Props) {
   return (
     <Box
       sx={{
+        display: 'flex',
+        flexDirection: 'column',
         height: '100%',
+        position: 'relative',
       }}
-      data-tid="gridPerspectiveContainer"
     >
-      <MainToolbar
-        prefixDataTID={'grid'}
-        toggleSelectAllFiles={toggleSelectAllFiles}
-        handleSortingMenu={handleSortingMenu}
-        handleExportCsvMenu={handleExportCsvMenu}
-        openSettings={openSettings}
-      />
-      <GlobalHotKeys
-        keyMap={keyMap}
-        handlers={keyBindingHandlers}
-        allowChanges={true}
+      {/* MainToolbar moved to left ActivityBar - hide the horizontal toolbar to avoid duplication */}
+      <Box 
+        component="div"
+        sx={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          minHeight: 0,
+          overflow: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            height: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: '#f1f1f1',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: '#888',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: '#555',
+          }
+        }}
       >
-        <GridCellsStyleContextProvider>
-          <GridPagination
+        <GlobalHotKeys
+          keyMap={keyMap}
+          handlers={keyBindingHandlers}
+          allowChanges={true}
+        >
+          <GridCellsStyleContextProvider>
+            <GridPagination
             //directories={sortedDirectories}
             desktopMode={desktopMode}
             //files={sortedFiles}
@@ -352,7 +372,8 @@ function GridPerspective(props: Props) {
             clearSelection={clearSelection}
           />
         </GridCellsStyleContextProvider>
-      </GlobalHotKeys>
+        </GlobalHotKeys>
+      </Box>
       {isAddTagDialogOpened !== undefined && (
         <AddTagToTagGroupDialog
           open={true}
