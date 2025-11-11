@@ -82,7 +82,14 @@ export type Channels =
   | 'deleteOllamaModel'
   | 'startup-finished'
   | 'getAuthor'
-  | 'cancelRequest';
+  | 'cancelRequest'
+  | 'ai-keys-init'
+  | 'ai-key-save'
+  | 'ai-call-deepseek'
+  | 'ai-keys-get-all'
+  | 'ai-key-get-active'
+  | 'ai-key-set-active'
+  | 'ai-key-delete';
 
 const electronHandler = {
   ipcRenderer: {

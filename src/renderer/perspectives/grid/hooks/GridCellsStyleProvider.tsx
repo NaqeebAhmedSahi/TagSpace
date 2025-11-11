@@ -24,7 +24,7 @@ import {
 import React, { CSSProperties, createContext, useMemo } from 'react';
 
 type GridCellsStyleData = {
-  cellsStyle: CSSProperties;
+  cellsStyle: React.CSSProperties;
 };
 
 export const GridCellsStyleContext = createContext<GridCellsStyleData>({
@@ -46,20 +46,20 @@ export const GridCellsStyleContextProvider = ({
         margin: 0,
         marginTop: -5,
         display: 'grid',
-        gridGap: '5px 5px',
+        gap: '5px 5px',
         padding: 5,
         paddingTop: 10,
         paddingBottom: 70,
+        flex: '1 1 auto',
+        minHeight: 0,
+        overflow: 'auto',
         // background: 'red',
         gridTemplateColumns:
-          'repeat(auto-fit,minmax(' +
+          'repeat(auto-fill,minmax(' +
           calculateEntryWidth(entrySize) +
           'px,1fr))',
-        gridTemplateRows:
-          'repeat(auto-fit,minmax(' +
-          calculateEntryHeight(entrySize) +
-          'px,1fr))',
-      },
+        gridAutoRows: calculateEntryHeight(entrySize) + 'px',
+      } as React.CSSProperties,
     };
   }, [entrySize]);
 

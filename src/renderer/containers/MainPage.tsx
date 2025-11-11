@@ -18,6 +18,7 @@
 
 import AppConfig from '-/AppConfig';
 import PageNotification from '-/containers/PageNotification';
+import ActivityBar from '-/components/ActivityBar';
 import { FilePropertiesContextProvider } from '-/hooks/FilePropertiesContextProvider';
 import { FullScreenContextProvider } from '-/hooks/FullScreenContextProvider';
 import { useDirectoryContentContext } from '-/hooks/useDirectoryContentContext';
@@ -311,10 +312,36 @@ function MainPage() {
     <Root>
       <GlobalHotKeys handlers={keyBindingHandlers} keyMap={keyMap}>
         <PageNotification />
+        <ActivityBar
+          onHome={() => loadParentDirectoryContent()}
+          onSearch={() => {
+            if (!isEntryInFullWidth) {
+              enterSearchMode();
+            }
+          }}
+          onFolders={() => {
+            showPanel('locationManagerPanel');
+            setDrawerOpened(true);
+          }}
+          onTags={() => {
+            showPanel('tagLibraryPanel');
+            setDrawerOpened(true);
+          }}
+          onSettings={() => {
+            // Trigger the settings dialog via IPC so the SettingsDialogContextProvider will open it
+            try {
+              // @ts-ignore
+              window.electronIO?.ipcRenderer?.sendMessage('toggle-settings-dialog');
+            } catch (e) {
+              // ignore when running in browser dev
+            }
+          }}
+        />
         <div
           style={{
             backgroundColor: theme.palette.background.default,
             height: '100%',
+            marginLeft: '56px',
           }}
         >
           <style>

@@ -1,33 +1,6 @@
 import OpenAI from 'openai';
 
-// TODO: Remove hardcoded key and move to environment variables
-const DEFAULT_API_KEY = process.env.REACT_APP_OPENAI_KEY;
-
 let openai: OpenAI | null = null;
-
-// Initialize with default key for development
-function initializeWithDefault() {
-  try {
-    if (!DEFAULT_API_KEY) {
-      return false;
-    }
-    if (!DEFAULT_API_KEY.startsWith('sk-')) {
-      return false;
-    }
-    const client = new OpenAI({
-      apiKey: DEFAULT_API_KEY,
-      dangerouslyAllowBrowser: true,
-    });
-    openai = client;
-    return true;
-  } catch (error) {
-    // Silently fail on module load - will be retried later
-    return false;
-  }
-}
-
-// Try to initialize with default key on module load
-initializeWithDefault();
 
 export function initOpenAI(apiKey: string) {
   if (!apiKey) {
@@ -59,48 +32,10 @@ export function isOpenAIInitialized(): boolean {
   return isInit;
 }
 
+// This function is deprecated - API keys should be configured through Settings > AI tab
 export function ensureInitFromDefault(): boolean {
-  console.log('[OpenAI] ensureInitFromDefault called, openai is:', openai);
-  if (openai) {
-    console.log('[OpenAI] Already initialized, returning true');
-    return true;
-  }
-  console.log('[OpenAI] Not initialized, attempting initialization...');
-  try {
-    console.log('[OpenAI] Checking DEFAULT_API_KEY...');
-    if (!DEFAULT_API_KEY) {
-      console.warn('[OpenAI] No default API key available');
-      return false;
-    }
-    console.log(
-      '[OpenAI] DEFAULT_API_KEY exists, length:',
-      DEFAULT_API_KEY.length,
-    );
-    if (!DEFAULT_API_KEY.startsWith('sk-')) {
-      console.warn(
-        '[OpenAI] Default API key format is invalid, starts with:',
-        DEFAULT_API_KEY.substring(0, 5),
-      );
-      return false;
-    }
-    console.log('[OpenAI] Creating OpenAI client...');
-    openai = new OpenAI({
-      apiKey: DEFAULT_API_KEY,
-      dangerouslyAllowBrowser: true,
-    });
-    console.log('[OpenAI] OpenAI client created successfully');
-    console.log('[OpenAI] Initialized successfully with default key');
-    return true;
-  } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-    const errorStack = e instanceof Error ? e.stack : undefined;
-    console.error('[OpenAI] Failed to initialize OpenAI with default key');
-    console.error('[OpenAI] Error message:', errorMessage);
-    if (errorStack) {
-      console.error('[OpenAI] Error stack:', errorStack);
-    }
-    return false;
-  }
+  console.warn('[OpenAI] ensureInitFromDefault is deprecated. Please configure API key in Settings > AI tab.');
+  return false;
 }
 
 export async function convertToJSON(

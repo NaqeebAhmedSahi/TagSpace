@@ -945,4 +945,336 @@ export default function loadMainEvents() {
       event.returnValue = process.env.USER ?? process.env.USERNAME ?? '';
     }
   });
+
+  // AI API Keys Database (using auth.db)
+  const initAiKeysDb = async () => {
+    try {
+      const userData = app.getPath('userData');
+      await fs.ensureDir(userData);
+      const dbPath = path.join(userData, 'auth.db');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sqlite3mod = require('sqlite3');
+      let sql: any = sqlite3mod;
+      try {
+        if (sqlite3mod && typeof sqlite3mod.verbose === 'function') {
+          sql = sqlite3mod.verbose();
+        } else if (sqlite3mod && sqlite3mod.default && typeof sqlite3mod.default.verbose === 'function') {
+          sql = sqlite3mod.default.verbose();
+        }
+      } catch (e) {
+        // ignore
+      }
+      const DatabaseCtor: any = (sql && sql.Database) || (sqlite3mod && sqlite3mod.Database) || (sqlite3mod && sqlite3mod.default && sqlite3mod.default.Database) || null;
+      if (!DatabaseCtor) {
+        throw new Error('sqlite3 Database constructor not found');
+      }
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          db.run(
+            `CREATE TABLE IF NOT EXISTS ai_api_keys (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              provider TEXT NOT NULL,
+              api_key TEXT NOT NULL,
+              model TEXT,
+              temperature REAL DEFAULT 0.7,
+              base_url TEXT,
+              is_active INTEGER DEFAULT 0,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(provider, api_key)
+            )`,
+            (createErr) => {
+              if (createErr) {
+                db.close();
+                return reject(createErr);
+              }
+              // Try to ensure `base_url` column exists for older DBs
+              db.run(`ALTER TABLE ai_api_keys ADD COLUMN base_url TEXT`, [], (alterErr) => {
+                // ignore errors (column may already exist)
+                db.close();
+                return resolve(true);
+              });
+            },
+          );
+        });
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('initAiKeysDb error:', e);
+      throw e;
+    }
+  };
+
+  const getDbConnection = () => {
+    const userData = app.getPath('userData');
+    const dbPath = path.join(userData, 'auth.db');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const sqlite3mod = require('sqlite3');
+    let sql: any = sqlite3mod;
+    try {
+      if (sqlite3mod && typeof sqlite3mod.verbose === 'function') {
+        sql = sqlite3mod.verbose();
+      } else if (sqlite3mod && sqlite3mod.default && typeof sqlite3mod.default.verbose === 'function') {
+        sql = sqlite3mod.default.verbose();
+      }
+    } catch (e) {
+      // ignore
+    }
+    const DatabaseCtor: any = (sql && sql.Database) || (sqlite3mod && sqlite3mod.Database) || (sqlite3mod && sqlite3mod.default && sqlite3mod.default.Database) || null;
+    if (!DatabaseCtor) {
+      throw new Error('sqlite3 Database constructor not found');
+    }
+    return { DatabaseCtor, dbPath };
+  };
+
+  // Initialize AI keys database
+  ipcMain.handle('ai-keys-init', async () => {
+    try {
+      await initAiKeysDb();
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
+  });
+
+  // Save AI API key
+  ipcMain.handle('ai-key-save', async (event, provider: string, apiKey: string, model?: string, temperature?: number, baseUrl?: string) => {
+    try {
+      await initAiKeysDb();
+      const { DatabaseCtor, dbPath } = getDbConnection();
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          db.run(
+            `INSERT OR REPLACE INTO ai_api_keys (provider, api_key, model, temperature, base_url, updated_at)
+             VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+            [provider, apiKey, model || null, temperature || 0.7, baseUrl || null],
+            function(insErr) {
+              if (insErr) {
+                db.close();
+                return reject(insErr);
+              }
+              db.close();
+              return resolve({ success: true, id: this.lastID });
+            },
+          );
+        });
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('ai-key-save error:', e);
+      return { success: false, message: e.message };
+    }
+  });
+
+  // Get all AI API keys
+  ipcMain.handle('ai-keys-get-all', async () => {
+    try {
+      await initAiKeysDb();
+      const { DatabaseCtor, dbPath } = getDbConnection();
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          db.all(
+            `SELECT id, provider, api_key, model, temperature, base_url, is_active, created_at, updated_at
+             FROM ai_api_keys
+             ORDER BY is_active DESC, created_at DESC`,
+            [],
+            (queryErr, rows) => {
+              if (queryErr) {
+                db.close();
+                return reject(queryErr);
+              }
+              db.close();
+              return resolve(rows || []);
+            },
+          );
+        });
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('ai-keys-get-all error:', e);
+      return [];
+    }
+  });
+
+  // Perform DeepSeek API call from main process to avoid CORS issues in renderer
+  // Perform DeepSeek API call from main process to avoid CORS issues in renderer
+ipcMain.handle('ai-call-deepseek', async (_event, text: string, apiKey: string, baseUrl?: string | null, model?: string | null) => {
+  try {
+    const effectiveBase = baseUrl && String(baseUrl).trim().length > 0 ? String(baseUrl) : 'https://api.deepseek.com';
+    const base = effectiveBase.replace(/\/$/, '');
+    
+    // Use OpenAI-compatible chat completions endpoint
+    const url = `${base}/chat/completions`;
+    
+    // Use global fetch if available (Node 18+), otherwise try to import node-fetch
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const fetchImpl = (globalThis as any).fetch || (() => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        return require('node-fetch');
+      } catch (err) {
+        throw new Error('No fetch available in main process');
+      }
+    })();
+
+    // eslint-disable-next-line no-console
+    console.log('[ai-call-deepseek] Calling URL:', url, 'with model:', model || 'deepseek-chat');
+
+    const response = await fetchImpl(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model || 'deepseek-chat',
+        messages: [
+          {
+            role: 'user',
+            content: text
+          }
+        ],
+        stream: false,
+        temperature: 0.7,
+        max_tokens: 2048
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      // eslint-disable-next-line no-console
+      console.error('[ai-call-deepseek] API error:', response.status, response.statusText, errorText);
+      throw new Error(`DeepSeek API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    // Extract the response content from OpenAI-compatible format
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      return data.choices[0].message.content;
+    } else if (data.choices && data.choices[0] && data.choices[0].text) {
+      return data.choices[0].text;
+    } else if (data.text) {
+      return data.text;
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn('[ai-call-deepseek] Unexpected response format:', data);
+      return JSON.stringify(data);
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('ai-call-deepseek error:', e);
+    throw e;
+  }
+});
+
+  // Get active AI API key
+  ipcMain.handle('ai-key-get-active', async () => {
+    try {
+      await initAiKeysDb();
+      const { DatabaseCtor, dbPath } = getDbConnection();
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          db.get(
+            `SELECT id, provider, api_key, model, temperature, base_url, is_active, created_at, updated_at
+             FROM ai_api_keys
+             WHERE is_active = 1
+             LIMIT 1`,
+            [],
+            (queryErr, row) => {
+              if (queryErr) {
+                db.close();
+                return reject(queryErr);
+              }
+              db.close();
+              return resolve(row || null);
+            },
+          );
+        });
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('ai-key-get-active error:', e);
+      return null;
+    }
+  });
+
+  // Set active status for a key
+  ipcMain.handle('ai-key-set-active', async (event, id: number, isActive: boolean) => {
+    try {
+      await initAiKeysDb();
+      const { DatabaseCtor, dbPath } = getDbConnection();
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          // First, set all keys to inactive
+          db.run(
+            `UPDATE ai_api_keys SET is_active = 0`,
+            [],
+            (updateErr) => {
+              if (updateErr) {
+                db.close();
+                return reject(updateErr);
+              }
+              // Then set the selected key to active if requested
+              if (isActive) {
+                db.run(
+                  `UPDATE ai_api_keys SET is_active = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+                  [id],
+                  function(updateErr2) {
+                    if (updateErr2) {
+                      db.close();
+                      return reject(updateErr2);
+                    }
+                    db.close();
+                    return resolve({ success: true, changes: this.changes });
+                  },
+                );
+              } else {
+                db.close();
+                return resolve({ success: true, changes: 0 });
+              }
+            },
+          );
+        });
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('ai-key-set-active error:', e);
+      return { success: false, message: e.message };
+    }
+  });
+
+  // Delete AI API key
+  ipcMain.handle('ai-key-delete', async (event, id: number) => {
+    try {
+      await initAiKeysDb();
+      const { DatabaseCtor, dbPath } = getDbConnection();
+      return new Promise((resolve, reject) => {
+        const db = new DatabaseCtor(dbPath, (err: any) => {
+          if (err) return reject(err);
+          db.run(
+            `DELETE FROM ai_api_keys WHERE id = ?`,
+            [id],
+            function(delErr) {
+              if (delErr) {
+                db.close();
+                return reject(delErr);
+              }
+              db.close();
+              return resolve({ success: true, changes: this.changes });
+            },
+          );
+        });
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('ai-key-delete error:', e);
+      return { success: false, message: e.message };
+    }
+  });
 }

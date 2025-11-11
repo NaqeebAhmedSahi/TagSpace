@@ -27,7 +27,28 @@ export const GridCellsContainer = ({ children }: GridCellsContainerProps) => {
   const { cellsStyle } = useGridCellsStyleContext();
 
   return (
-    <div style={cellsStyle} data-tid="perspectiveGridFileTable">
+    <div 
+      style={{
+        ...cellsStyle,
+        flex: 1,
+        overflow: 'auto',
+        minHeight: 0,
+      }} 
+      data-tid="perspectiveGridFileTable"
+      sx={{
+        '&::-webkit-scrollbar': {
+          width: '8px',
+          height: '8px',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          borderRadius: '4px',
+        },
+        '&::-webkit-scrollbar-track': {
+          backgroundColor: 'rgba(0, 0, 0, 0.05)',
+        }
+      }}
+    >
       {children}
     </div>
   );
