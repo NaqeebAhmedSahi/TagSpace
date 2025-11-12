@@ -134,3 +134,5 @@ sqlite3 -header -column [DB_PATH] "SELECT * FROM pdf_parsed_data;"
 sqlite3 -header -csv [DB_PATH] "SELECT * FROM pdf_parsed_data;" > pdf_data.csv
 ```
 
+
+

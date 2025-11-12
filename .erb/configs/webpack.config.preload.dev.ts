@@ -65,6 +65,29 @@ const configuration: webpack.Configuration = {
     __filename: false,
   },
 
+  // Fix for ENOSPC: system limit for number of file watchers reached
+  watchOptions: {
+    ignored: [
+      '**/node_modules/**',
+      '**/.git/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/release/**',
+      '**/web/dist/**',
+      '**/cordova/www/**',
+      '**/tests/testdata/**',
+      '**/tests/testdata-tmp/**',
+      '**/coverage/**',
+      '**/.erb/dll/**',
+      '**/beekeeper-studio/**',
+      '**/src/renderer/locales/**',
+      '**/assets/**',
+      '**/src/main/config/**',
+    ],
+    aggregateTimeout: 300,
+    poll: 1000, // Use polling to avoid file watcher limits
+  },
+
   watch: true,
 };
 

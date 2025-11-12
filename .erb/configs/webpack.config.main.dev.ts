@@ -23,6 +23,29 @@ const configuration: webpack.Configuration = {
 
   target: 'electron-main',
 
+  // Fix for ENOSPC: system limit for number of file watchers reached
+  watchOptions: {
+    ignored: [
+      '**/node_modules/**',
+      '**/.git/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/release/**',
+      '**/web/dist/**',
+      '**/cordova/www/**',
+      '**/tests/testdata/**',
+      '**/tests/testdata-tmp/**',
+      '**/coverage/**',
+      '**/.erb/dll/**',
+      '**/beekeeper-studio/**',
+      '**/src/renderer/locales/**',
+      '**/assets/**',
+      '**/src/main/config/**',
+    ],
+    aggregateTimeout: 300,
+    poll: 1000, // Use polling to avoid file watcher limits
+  },
+
   entry: {
     main: path.join(webpackPaths.srcMainPath, 'main.ts'),
     preload: path.join(webpackPaths.srcMainPath, 'preload.ts'),
@@ -77,6 +100,12 @@ const configuration: webpack.Configuration = {
   externals: {
     sqlite3: 'commonjs sqlite3',
     'better-sqlite3': 'commonjs better-sqlite3',
+    'pg-cursor': 'commonjs pg-cursor',
+    // Optional knex dependencies (not needed for MySQL, PostgreSQL, SQLite)
+    'tedious': 'commonjs tedious',
+    'mysql': 'commonjs mysql',
+    'oracledb': 'commonjs oracledb',
+    'pg-query-stream': 'commonjs pg-query-stream',
   },
 };
 

@@ -50,6 +50,29 @@ const configuration: webpack.Configuration = {
 
   target: ['web', 'electron-renderer'],
 
+  // Fix for ENOSPC: system limit for number of file watchers reached
+  watchOptions: {
+    ignored: [
+      '**/node_modules/**',
+      '**/.git/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/release/**',
+      '**/web/dist/**',
+      '**/cordova/www/**',
+      '**/tests/testdata/**',
+      '**/tests/testdata-tmp/**',
+      '**/coverage/**',
+      '**/.erb/dll/**',
+      '**/beekeeper-studio/**',
+      '**/src/renderer/locales/**', // Ignore locale files (they don't change often)
+      '**/assets/**', // Ignore assets directory
+      '**/src/main/config/**', // Ignore config files
+    ],
+    aggregateTimeout: 300,
+    poll: 1000, // Use polling instead of file watching to avoid ENOSPC errors
+  },
+
   entry: [
     `webpack-dev-server/client?http://localhost:${port}/dist`,
     'webpack/hot/only-dev-server',

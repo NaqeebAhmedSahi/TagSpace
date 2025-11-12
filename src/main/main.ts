@@ -42,6 +42,9 @@ let startupFilePath: string | undefined;
 let portableMode: boolean | undefined;
 const SUPPORTED_EXTS = new Set(['.md', '.mmd', '.txt', '.html', '.glb']);
 
+// Flag to indicate whether database IPC handlers are registered
+let __dbHandlersReady = false;
+
 // --- Debug/Dev Mode ---
 const isDebug =
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
@@ -56,6 +59,34 @@ if (isDebug || testMode) {
   // Silence console logs in production
   console.log = () => {};
 }
+
+// Wrap ipcMain.handle to log incoming invokes and help diagnose missing-handler issues.
+(() => {
+  try {
+    const origHandle = ipcMain.handle;
+    // @ts-ignore
+    ipcMain.handle = function (channel: string, listener: any) {
+      const wrapped = async (event: any, ...args: any[]) => {
+        try {
+          console.log(`[IPC] invoke received channel='${channel}' from senderId=${event?.sender?.id}`);
+        } catch (e) {
+          // ignore logging issues
+        }
+        try {
+          return await listener(event, ...args);
+        } catch (err) {
+          console.error(`[IPC] handler for '${channel}' threw:`, err);
+          throw err;
+        }
+      };
+      // call original handle with wrapped listener
+      return origHandle.call(ipcMain, channel, wrapped);
+    };
+    console.log('[DEBUG] ipcMain.handle wrapper installed');
+  } catch (e) {
+    console.error('Failed to install ipcMain.handle wrapper', e);
+  }
+})();
 
 // --- Parse Startup Arguments ---
 process.argv.forEach((arg, count) => {
@@ -382,7 +413,20 @@ function startWS() {
       );
       envPath = path.join(__dirname, '../.env');
     }
-    const properties = propertiesReader(envPath);
+    // Read properties file, handle missing file gracefully
+    let properties;
+    try {
+      properties = propertiesReader(envPath);
+    } catch (fileErr) {
+      console.warn('Could not read .env file at', envPath, 'using defaults');
+      // Create a minimal properties object
+      properties = {
+        get: (key: string) => {
+          if (key === 'KEY') return 'dev-key-placeholder';
+          return undefined;
+        }
+      };
+    }
     const results = new Promise((resolve, reject) => {
       findPort().then((freePort) => {
         try {
@@ -595,7 +639,18 @@ app.on('web-contents-created', (event, contents) => {
 });
 
 // --- Startup ---
-startWS();
+// Skip starting the WS helper in development to avoid webpack/runtime
+// errors caused by missing packaged metadata (e.g. .erb/node_modules lookups).
+// In production or packaged builds we still start the WS.
+if (process.env.NODE_ENV !== 'development') {
+  try {
+    startWS();
+  } catch (e) {
+    console.error('startWS() failed:', e);
+  }
+} else {
+  console.debug('Skipping startWS() in development mode');
+}
 
 let appI18N: any;
 
@@ -653,6 +708,48 @@ app
       });
 
       loadMainEvents();
+
+      // Setup database handlers and load saved connections
+      try {
+        // Expose a handler so renderers can ask whether DB handlers are registered.
+        // This is queried by preload.waitForHandlers to avoid missed event races.
+        ipcMain.handle('database:handlers-status', async () => {
+          return !!__dbHandlersReady;
+        });
+        console.log('[DEBUG] Registered database:handlers-status');
+
+        console.log('[DEBUG] Starting to load database handlers...');
+        const { setupDatabaseHandlers } = require('./lib/db/databaseHandlers');
+        console.log('[DEBUG] setupDatabaseHandlers imported:', typeof setupDatabaseHandlers);
+        const { databaseService } = require('./lib/db/DatabaseService');
+        console.log('[DEBUG] databaseService imported:', typeof databaseService);
+        console.log('[DEBUG] Calling setupDatabaseHandlers()...');
+        setupDatabaseHandlers();
+        console.log('[DEBUG] setupDatabaseHandlers() completed');
+  __dbHandlersReady = true;
+  console.log('[DEBUG] __dbHandlersReady = true');
+        // Notify renderer windows that database IPC handlers have been registered.
+        try {
+          BrowserWindow.getAllWindows().forEach((w) => {
+            try {
+              w.webContents.send('database:handlers-ready');
+            } catch (e) {
+              console.warn('Failed to send database:handlers-ready to a window', e);
+            }
+          });
+          console.log('[DEBUG] Sent database:handlers-ready to renderer windows');
+        } catch (e) {
+          console.error('[DEBUG] Error sending database:handlers-ready', e);
+        }
+        // Load previously saved connections from disk
+        databaseService.loadSavedConnections().catch((err: any) => {
+          console.error('Failed to load saved connections:', err);
+        });
+        console.log('Database handlers registered successfully');
+      } catch (error) {
+        console.error('Failed to register database handlers:', error);
+        console.error('Error stack:', (error as any)?.stack);
+      }
 
       ipcMain.on('load-extensions', () => {
         getExtensions(

@@ -6,6 +6,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import SettingsIcon from '@mui/icons-material/Settings';
 import InfoIcon from '@mui/icons-material/Info';
 import LabelIcon from '@mui/icons-material/Label';
+import StorageIcon from '@mui/icons-material/Storage';
 
 interface ActivityBarProps {
   className?: string;
@@ -14,6 +15,7 @@ interface ActivityBarProps {
   onFolders?: () => void;
   onTags?: () => void;
   onSettings?: () => void;
+  onDatabase?: () => void;
 }
 
 function ActivityBar({
@@ -23,6 +25,7 @@ function ActivityBar({
   onFolders,
   onTags,
   onSettings,
+  onDatabase,
 }: ActivityBarProps) {
   return (
     <Box
@@ -65,6 +68,11 @@ function ActivityBar({
             <LabelIcon />
           </IconButton>
         </Tooltip>
+        <Tooltip title="Database">
+          <IconButton size="large" color="primary" onClick={onDatabase}>
+            <StorageIcon />
+          </IconButton>
+        </Tooltip>
       </Stack>
 
       <Stack spacing={1} alignItems="center">
@@ -91,6 +99,7 @@ ActivityBar.defaultProps = {
   onFolders: () => {},
   onTags: () => {},
   onSettings: () => {},
+  onDatabase: () => {},
 };
 
 export default ActivityBar;

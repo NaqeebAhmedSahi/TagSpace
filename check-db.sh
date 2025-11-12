@@ -67,3 +67,5 @@ echo ""
 echo "To view full text data:"
 echo "sqlite3 \"$DB_PATH\" \"SELECT parsed_text FROM pdf_parsed_data WHERE file_path = 'YOUR_FILE_PATH';\""
 
+
+

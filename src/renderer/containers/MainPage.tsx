@@ -19,6 +19,7 @@
 import AppConfig from '-/AppConfig';
 import PageNotification from '-/containers/PageNotification';
 import ActivityBar from '-/components/ActivityBar';
+import DatabaseView from '-/components/DatabaseView';
 import { FilePropertiesContextProvider } from '-/hooks/FilePropertiesContextProvider';
 import { FullScreenContextProvider } from '-/hooks/FullScreenContextProvider';
 import { useDirectoryContentContext } from '-/hooks/useDirectoryContentContext';
@@ -107,6 +108,7 @@ function MainPage() {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   const [drawerOpened, setDrawerOpened] = useState<boolean>(true);
+  const [showDatabaseView, setShowDatabaseView] = useState<boolean>(false);
   const isDesktopMode: boolean = useSelector(getDesktopMode);
   const keyBindings = useSelector(getKeyBindingObject);
   const mainSplitSize = useSelector(getMainVerticalSplitSize);
@@ -144,6 +146,7 @@ function MainPage() {
     }
     // eslint-disable-next-line
   }, []);
+
 
   useEffect(() => {
     if (isEntryInFullWidth) {
@@ -209,6 +212,9 @@ function MainPage() {
         showPanel('helpFeedbackPanel');
         setDrawerOpened(true);
       },
+      showDatabase: () => {
+        setShowDatabaseView(true);
+      },
     }),
     [
       loadParentDirectoryContent,
@@ -231,6 +237,7 @@ function MainPage() {
       openSearch: keyBindings.openSearch,
       closeSearch: keyBindings.Escape,
       showHelp: keyBindings.showHelp,
+      showDatabase: keyBindings.showDatabase,
     }),
     [keyBindings],
   );
@@ -308,53 +315,63 @@ function MainPage() {
     );
   }
 
+  function renderMainContent() {
+    if (showDatabaseView) {
+      return <DatabaseView onClose={() => setShowDatabaseView(false)} />;
+    }
+
+    return renderContainers();
+  }
+
   return (
     <Root>
       <GlobalHotKeys handlers={keyBindingHandlers} keyMap={keyMap}>
         <PageNotification />
-        <ActivityBar
-          onHome={() => loadParentDirectoryContent()}
-          onSearch={() => {
-            if (!isEntryInFullWidth) {
-              enterSearchMode();
-            }
-          }}
-          onFolders={() => {
-            showPanel('locationManagerPanel');
-            setDrawerOpened(true);
-          }}
-          onTags={() => {
-            showPanel('tagLibraryPanel');
-            setDrawerOpened(true);
-          }}
-          onSettings={() => {
-            // Trigger the settings dialog via IPC so the SettingsDialogContextProvider will open it
-            try {
-              // @ts-ignore
-              window.electronIO?.ipcRenderer?.sendMessage('toggle-settings-dialog');
-            } catch (e) {
-              // ignore when running in browser dev
-            }
-          }}
-        />
+        {!showDatabaseView && (
+          <ActivityBar
+            onHome={() => loadParentDirectoryContent()}
+            onSearch={() => {
+              if (!isEntryInFullWidth) {
+                enterSearchMode();
+              }
+            }}
+            onFolders={() => {
+              showPanel('locationManagerPanel');
+              setDrawerOpened(true);
+            }}
+            onTags={() => { 
+              showPanel('tagLibraryPanel');
+              setDrawerOpened(true);
+            }}
+            onSettings={() => {
+              try {
+                // @ts-ignore
+                window.electronIO?.ipcRenderer?.sendMessage('toggle-settings-dialog');
+              } catch (e) {
+                // ignore when running in browser dev
+              }
+            }}
+            onDatabase={() => {
+              setShowDatabaseView(true);
+            }}
+          />
+        )}
         <div
           style={{
             backgroundColor: theme.palette.background.default,
             height: '100%',
-            marginLeft: '56px',
+            marginLeft: showDatabaseView ? 0 : '56px',
           }}
         >
           <style>
             {`
-              body { background-color: ${
-                theme.palette.background.default
+              body { background-color: ${theme.palette.background.default
               } !important;}
               .default-splitter {
                 --default-splitter-line-margin: 2px !important;
                 --default-splitter-line-size: 1px !important;
-                --default-splitter-line-color: ${
-                  theme.palette.divider
-                } !important;
+                --default-splitter-line-color: ${theme.palette.divider
+              } !important;
               }
 
               .react-split .split-container.vertical .splitter {
@@ -362,9 +379,8 @@ function MainPage() {
               }
 
               .react-split .split-container {
-                --react-split-splitter: ${
-                  !openedEntry || isEntryInFullWidth ? '0' : '3px'
-                } !important;
+                --react-split-splitter: ${!openedEntry || isEntryInFullWidth || showDatabaseView ? '0' : '3px'
+              } !important;
               }
               .react-split .secondary .full-content {
                 display: flex;
@@ -387,7 +403,7 @@ function MainPage() {
                   [classes.contentShift]: !drawerOpened,
                 })}
               >
-                {renderContainers()}
+                {renderMainContent()}
               </main>
             </>
           ) : (
@@ -405,7 +421,7 @@ function MainPage() {
                   hideDrawer={() => setDrawerOpened(false)}
                 />
               </SwipeableDrawer>
-              {renderContainers()}
+              {renderMainContent()}
             </>
           )}
         </div>
